@@ -1,0 +1,60 @@
+{
+	"manifest_version": 2,
+	"version": "0.0.2",
+	"name": "Bilibili Joybook - 适用于bilibili.com的小工具",
+	"short_name": "joybook",
+	"description": "wei, zaima?",
+	"icons": {
+		"16": "icons/16.png",
+		"48": "icons/48.png",
+		"128": "icons/128.png",
+		"256": "icons/256.png"
+	},
+	"permissions": [
+		"storage",
+		"unlimitedStorage",
+		"*://*.bilibili.com/*",
+		"*://*.hdslb.com/*",
+		"webRequest",
+		"webRequestBlocking",
+		"cookies",
+		"tabs"
+	],
+	"web_accessible_resources": [
+		"js/inject.js",
+		"img/twotone-settings-24px.svg"
+	],
+	"background": {
+		"scripts": ["background.js"],
+		"persistent": true
+	},
+	"content_scripts": [
+		{
+			"js": ["js/contentscript.js"],
+			"all_frames": false,
+			"matches": ["*://www.bilibili.com/*"],
+			"run_at": "document_start"
+		},
+		{
+			"js": ["js/injection.js"],
+			"all_frames": false,
+			"matches": ["*://www.bilibili.com/*", "*://space.bilibili.com/*"],
+			"run_at": "document_start"
+		},
+		{
+			"js": ["js/collectInjection.js"],
+			"all_frames": true,
+			"matches": ["https://www.bilibili.com/ranking/*"],
+			"run_at": "document_start"
+		}
+	],
+	"options_page": "options.html",
+	"externally_connectable": {
+		"matches": ["*://*.bilibili.com/*"]
+	},
+	"browser_action": {
+		"default_popup": "popup.html",
+		"default_title": "bilibili_joybook"
+	},
+	"content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'"
+}

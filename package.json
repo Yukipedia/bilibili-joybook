@@ -1,0 +1,49 @@
+{
+	"name": "bilibili_joybook",
+	"version": "0.0.3",
+	"private": true,
+	"author": "Yukipedia <pynds68@outlook.com>",
+	"scripts": {
+		"serve": "vue-cli-service build --mode development --watch",
+		"build": "vue-cli-service lint && vue-cli-service build",
+		"build:watch": "vue-cli-service build --mode production --watch",
+		"lint": "vue-cli-service lint",
+		"test:e2e": "vue-cli-service test:e2e",
+		"test:unit": "vue-cli-service test:unit"
+	},
+	"dependencies": {
+		"axios": "^0.18.0",
+		"dot-prop": "^4.2.0",
+		"eventemitter3": "^3.1.0",
+		"vue": "^2.5.17",
+		"vue-axios": "^2.1.4",
+		"vue-class-component": "^6.0.0",
+		"vue-property-decorator": "^7.0.0",
+		"vue-router": "^3.0.1",
+		"vuetify": "^1.4.0"
+	},
+	"devDependencies": {
+		"@types/chrome": "^0.0.75",
+		"@types/dot-prop": "^4.2.0",
+		"@types/jest": "^23.1.4",
+		"@vue/cli-plugin-babel": "^3.1.1",
+		"@vue/cli-plugin-e2e-cypress": "^3.1.2",
+		"@vue/cli-plugin-typescript": "^3.1.1",
+		"@vue/cli-plugin-unit-jest": "^3.1.1",
+		"@vue/cli-service": "^3.1.4",
+		"@vue/test-utils": "^1.0.0-beta.20",
+		"copy-webpack-plugin": "^4.6.0",
+		"html-webpack-plugin": "^3.2.0",
+		"imports-loader": "^0.8.0",
+		"node-sass": "^4.10.0",
+		"sass-loader": "^7.0.1",
+		"stylus": "^0.54.5",
+		"stylus-loader": "^3.0.1",
+		"ts-jest": "^23.0.0",
+		"typescript": "^3.1.6",
+		"vue-cli-plugin-browser-extension": "^0.12.1",
+		"vue-cli-plugin-vuetify": "^0.4.6",
+		"vue-template-compiler": "^2.5.17",
+		"vuetify-loader": "^1.0.5"
+	}
+}
