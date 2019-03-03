@@ -6,6 +6,7 @@ import AVBlocker from '@/modules/inject/avblocker';
 import DisableDanmakuMask from '@/modules/inject/disableDanmakuMask';
 import Hotkey from '@/modules/inject/hotkey';
 import MXHRR from '@/modules/inject/MXHRResponse';
+import SkipSponsor from '@/modules/inject/skipSponsor';
 import { AddToBlocklist, FixPlayerData, FixUserData, Logger } from '@/modules/inject/plugins';
 
 const injectModules = {
@@ -18,6 +19,7 @@ const injectModules = {
 	Hotkey,
 	Logger,
 	MXHRR,
+	SkipSponsor,
 };
 
 
