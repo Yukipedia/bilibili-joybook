@@ -19,7 +19,7 @@ export const config = {
 	},
 } as ModuleConstructor;
 
-export default class AisableDanmakuMask extends Module {
+export default class DisableDanmakuMask extends Module {
 	constructor() {
 		super(config);
 	}
