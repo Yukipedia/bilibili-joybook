@@ -18,6 +18,7 @@ const enum Direct {
 	/* 弹幕 */
 	danmakuPost =              'x/v2/dm/post',                                   // 发射弹幕
 	danmakuReport =            'x/dm/report/add',                                // 举报弹幕
+	danmakuRecall =            'x/dm/recall',                                    // 撤回弹幕
 	/* 评论 */
 	commentAdd =               'x/v2/reply/add',                                 // 添加评论
 	commentDel =               'x/v2/reply/del',                                 // 删除评论
@@ -159,6 +160,7 @@ export default class AccountShare extends Module {
 
 					new RegExp(Direct.danmakuPost, 'ig').test(details.url) ||
 					new RegExp(Direct.danmakuReport, 'ig').test(details.url) ||
+					new RegExp(Direct.danmakuRecall, 'ig').test(details.url) ||
 
 					new RegExp(Direct.commentAdd, 'ig').test(details.url) ||
 					new RegExp(Direct.commentDel, 'ig').test(details.url) ||
