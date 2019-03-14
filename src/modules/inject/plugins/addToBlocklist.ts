@@ -141,7 +141,7 @@ export default class AddToBlocklist extends Module {
 	}
 
 	public videopage() {
-		if (document.querySelector('#arc_toolbar_report')) /* stardustVideo */ {
+		if (document.querySelector('.stardust-video') && document.querySelector('#video-page-app')) /* stardustVideo */ {
 			const { wrap, icon } = this.createBtn('stardustvideo');
 			this.sendMessage<joybook.avblocker.FullBlockList>(response => {
 				this.ensureAidExist().then(() => {

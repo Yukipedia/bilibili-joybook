@@ -18,6 +18,7 @@ const enum Direct {
 	/* 弹幕 */
 	danmakuPost =              'x/v2/dm/post',                                   // 发射弹幕
 	danmakuReport =            'x/dm/report/add',                                // 举报弹幕
+	danmakuRecall =            'x/dm/recall',                                    // 撤回弹幕
 	/* 评论 */
 	commentAdd =               'x/v2/reply/add',                                 // 添加评论
 	commentDel =               'x/v2/reply/del',                                 // 删除评论
@@ -33,6 +34,8 @@ const enum Direct {
 	favoriteFolder =           'x/v2/fav/folder',                                // 收藏夹列表
 	favoriteAdd =              'x/v2/fav/video/add',                             // 添加收藏
 	favoriteDel =              'x/v2/fav/video/del',                             // 删除收藏
+	stardustFavorite =         'medialist/gateway/base/created',                 // [星尘]收藏
+	stardustFavoriteDeal =     'medialist/gateway/coll/resource/deal',           // [星尘]添加到/删除收藏
 	filter =                   'dm/filter/user',                                 // 同步/删除/添加屏蔽列表(包括屏蔽用户)
 	threwCoin =                'x/web-interface/archive/coins',                  // 是否已经投过币
 	throwCoin =                'x/web-interface/coin/add',                       // 投币
@@ -51,9 +54,9 @@ const enum Direct {
 	exp =                      'plus/account/exp.php',                           // 投币时的经验值
 	charge =                   'x/web-interface/elec/show',                      // 充电鸣谢
 	bangumiLastWatch =         'view/web_api/season/user/status',                // bangumi 最后观看时间
-	stardustBangumiLastWatch = 'pgc/view/web/season/user/status',                // 新版界面 bangumi 最后观看时间
+	stardustBangumiLastWatch = 'pgc/view/web/season/user/status',                // [星尘]bangumi 最后观看时间
 	bangumiReview =            'review/web_api/user/open',                       // 番剧评测
-	space =                    'space\\.bilibili\\.com',                             // 用户空间
+	space =                    'space\\.bilibili\\.com',                         // 用户空间
 }
 
 export const config: ModuleConstructor = {
@@ -159,6 +162,7 @@ export default class AccountShare extends Module {
 
 					new RegExp(Direct.danmakuPost, 'ig').test(details.url) ||
 					new RegExp(Direct.danmakuReport, 'ig').test(details.url) ||
+					new RegExp(Direct.danmakuRecall, 'ig').test(details.url) ||
 
 					new RegExp(Direct.commentAdd, 'ig').test(details.url) ||
 					new RegExp(Direct.commentDel, 'ig').test(details.url) ||
@@ -174,6 +178,8 @@ export default class AccountShare extends Module {
 					new RegExp(Direct.favoriteFolder, 'ig').test(details.url) ||
 					new RegExp(Direct.favoriteAdd, 'ig').test(details.url) ||
 					new RegExp(Direct.favoriteDel, 'ig').test(details.url) ||
+					new RegExp(Direct.stardustFavorite, 'ig').test(details.url) ||
+					new RegExp(Direct.stardustFavoriteDeal, 'ig').test(details.url) ||
 					new RegExp(Direct.filter, 'ig').test(details.url) ||
 					new RegExp(Direct.threwCoin, 'ig').test(details.url) ||
 					new RegExp(Direct.throwCoin, 'ig').test(details.url) ||
