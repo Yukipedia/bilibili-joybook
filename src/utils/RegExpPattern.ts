@@ -30,4 +30,8 @@ export default class RegExpPattern {
 	public static get heartbeat() {
 		return /x\/report\/web\/heartbeat/ig;
 	}
+
+	public static get sponsor() {
+		return /\/\/bangumi\.bilibili\.com\/sponsor\/web_api\/v2\/rank\/total/ig;
+	}
 }

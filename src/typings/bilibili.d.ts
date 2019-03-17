@@ -42,7 +42,7 @@ declare namespace bili {
 
 	interface BaseResponse {
 		code: number;
-		ttl: boolean;
+		ttl?: boolean;
 		message?: string;
 	}
 
@@ -302,6 +302,23 @@ declare namespace bili {
 
 	interface FavoriteFolders extends BaseResponse {
 		data: FavoriteFoldersData[];
+	}
+
+	interface BangumiSponsor extends BaseResponse {
+		result: {
+			ep_bp: boolean;
+			list: Array<{
+				face: string;
+				/* 虽然是string但是数值是0-1 */
+				hidden: string;
+				message: string;
+				rank: string;
+				uid: string;
+				uname: string;
+				vip: { vipStatus: number; vipType: number; };
+			}>;
+			users: number;
+		};
 	}
 
 	interface PlayerMediaInfo {
