@@ -25,6 +25,7 @@
 				</span>
 			</v-flex>
 
+			<template v-if="beneficiaryAccount">
 			<v-flex
 				xs4
 				:style="{ flex: '0 0 auto' }"
@@ -58,6 +59,7 @@
 					</v-tooltip>
 				</span>
 			</v-flex>
+			</template>
 		</v-layout>
 	</v-container>
 </v-card>
@@ -76,8 +78,6 @@ export default class AccountSharePUI extends Vue {
 	public chromeStorage: ChromeAsyncStorage = new ChromeAsyncStorage();
 	public chromeCookies: ChromeAsyncCookies = new ChromeAsyncCookies({});
 	public chromeTabs: ChromeAsyncTabs = new ChromeAsyncTabs();
-	public alert: boolean = false;
-	public alertMessage: string = '';
 	public render: boolean = true;
 
 	get storelocation() {
@@ -109,18 +109,8 @@ export default class AccountSharePUI extends Vue {
 
 	public useCurrentLoginAccountAs(type: 'beneficiary' | 'vip') {
 		const cookies = this.chromeCookies.cookies.filter(v => ['stardustvideo', 'stardustpgcv', 'CURRENT_QUALITY', 'CURRENT_FNVAL'].indexOf(v.name) === -1 ? true : false);
-		this.chromeStorage.set(this.storearea, `${this.storelocation}.account.${type}.cookies`, cookies)
-			.then(() => this.fetchAccountDetails(type))
-			.then(() => {
-				chrome.runtime.sendMessage(
-					chrome.runtime.id,
-					{
-						cmd: 'bindAccount',
-						type,
-					},
-				);
-				return Promise.resolve();
-			})
+		this.fetchAccountDetails(type)
+			.then(() => this.chromeStorage.set(this.storearea, `${this.storelocation}.account.${type}.cookies`, cookies))
 			.then(() => this.chromeCookies.removeAll('https://www.bilibili.com'))
 			.then(async () => {
 				if (this.beneficiaryAccount && this.vipAccount) {
@@ -142,18 +132,15 @@ export default class AccountSharePUI extends Vue {
 	}
 
 	public fetchAccountDetails(type: 'beneficiary' | 'vip') {
-		return this.axios.get(`https://api.bilibili.com/x/web-interface/nav?ts=${Date.now()}`)
+		return new Promise((resolve, reject) => {
+			this.axios.get<bili.NavData>(`https://api.bilibili.com/x/web-interface/nav?ts=${Date.now()}`)
 				.then(result => result.data)
 				.then(accDetails => {
-					console.log(accDetails);
-					if (!accDetails.data.isLogin) {
-						this.alertMessage = accDetails.message;
-						this.alert = true;
-						throw new Error(accDetails.message);
-					}
-					return accDetails;
-				})
-				.then(accDetails => this.chromeStorage.set(this.storearea, `${this.storelocation}.account.${type}.data`, accDetails.data));
+					if (!accDetails.data.isLogin) return reject(accDetails.message);
+					this.chromeStorage.set(this.storearea, `${this.storelocation}.account.${type}.data`, accDetails.data)
+						.then(resolve);
+				});
+		});
 	}
 
 	public deleteAccountCookies() {
