@@ -9,12 +9,13 @@ const enum Direct {
 	/* 账号导航栏 */
 	watchHistory =             'x/v2/history',                                   // 观看历史
 	newestFavList =            'x/v2/fav/video/newest',                          // 收藏夹
+	stardustFavList =          'medialist/gateway/coll/resource/recent',         // [星尘]收藏夹
 	dynamicNew =               'dynamic_svr/v1/dynamic_svr/dynamic_new',         // 动态
 	dynamicHistory =           'dynamic_svr/v1/dynamic_svr/dynamic_history',     // 动态 (往下翻页时)
 	dynamicNum =               'dynamic_svr/v1/dynamic_svr/dynamic_num',         // 动态更新 提示你有多少个新动态
 	historyToView =            'x/v2/history/toview/web',                        // 稍后再看
 	messages =                 'web_im/v1/web_im/unread_msgs',                   // 消息
-	messagesNotify =           'api/notify/query\\.notify\\.count\\.do',               // 应该是提醒你有没有人@你或者回复你的
+	messagesNotify =           'api/notify/query\\.notify\\.count\\.do',         // 应该是提醒你有没有人@你或者回复你的
 	/* 弹幕 */
 	danmakuPost =              'x/v2/dm/post',                                   // 发射弹幕
 	danmakuReport =            'x/dm/report/add',                                // 举报弹幕
