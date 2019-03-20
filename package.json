@@ -1,6 +1,6 @@
 {
-	"name": "bilibili_joybook",
 	"version": "0.0.5",
+	"name": "bilibili-joybook",
 	"private": true,
 	"author": "Yukipedia <pynds68@outlook.com>",
 	"scripts": {
