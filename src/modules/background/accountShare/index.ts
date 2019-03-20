@@ -9,7 +9,7 @@ const enum Direct {
 	/* 账号导航栏 */
 	watchHistory =             'x/v2/history',                                   // 观看历史
 	newestFavList =            'x/v2/fav/video/newest',                          // 收藏夹
-	stardustFavList =          'medialist/gateway/coll/resource/recent',         // [星尘]收藏夹
+	stardustNewestFavList =          'medialist/gateway/coll/resource/recent',         // [星尘]收藏夹
 	dynamicNew =               'dynamic_svr/v1/dynamic_svr/dynamic_new',         // 动态
 	dynamicHistory =           'dynamic_svr/v1/dynamic_svr/dynamic_history',     // 动态 (往下翻页时)
 	dynamicNum =               'dynamic_svr/v1/dynamic_svr/dynamic_num',         // 动态更新 提示你有多少个新动态
@@ -154,6 +154,7 @@ export default class AccountShare extends Module {
 					new RegExp(Direct.heartbeat, 'ig').test(details.url) ||
 					new RegExp(Direct.webshow, 'ig').test(details.url) ||
 					new RegExp(Direct.newestFavList, 'ig').test(details.url) ||
+					new RegExp(Direct.stardustNewestFavList, 'ig').test(details.url) ||
 					new RegExp(Direct.dynamicHistory, 'ig').test(details.url) ||
 					new RegExp(Direct.dynamicNew, 'ig').test(details.url) ||
 					new RegExp(Direct.dynamicNum, 'ig').test(details.url) ||
