@@ -7,7 +7,7 @@ export default class RegExpPattern {
 		return /www\.bilibili\.com\/?$/ig;
 	}
 
-	public static get bangumiUrlPatterb() {
+	public static get bangumiUrlPattern() {
 		return /(bangumi\/play\/ss\d+)|(bangumi\/play\/ep\d+)/ig;
 	}
 

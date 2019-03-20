@@ -5,7 +5,7 @@ export const config = {
 	name: 'SkipSponsor',
 	context: envContext.inject,
 	priority: 1,
-	run_at: RegExpPattern.bangumiUrlPatterb,
+	run_at: RegExpPattern.bangumiUrlPattern,
 	storageOptions: {
 		area: 'local',
 		switch: 'switch.skipsponsor',

@@ -88,7 +88,7 @@ export default class Options extends Vue {
 			chrome.tabs.create({
 				url: 'https://github.com/Yukipedia/bilibili-joybook/releases',
 				selected: true,
-			})
+			});
 		}
 	}
 }
