@@ -84,6 +84,12 @@ export default class Options extends Vue {
 				this.$router.replace({ path: this.$route.query.to as string });
 			}, 500);
 		}
+		if (this.$route.query.catlog) {
+			chrome.tabs.create({
+				url: 'https://github.com/Yukipedia/bilibili-joybook/releases',
+				selected: true,
+			})
+		}
 	}
 }
 </script>

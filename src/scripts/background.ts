@@ -29,7 +29,7 @@ chrome.runtime.onInstalled.addListener(details => {
 				items.UpdateAvailable = false;
 				chrome.storage.local.set(items, () => {
 					chrome.tabs.create({
-						url: `chrome-extension://${chrome.runtime.id}/options.html?catlog`,
+						url: `chrome-extension://${chrome.runtime.id}/options.html#/?catlog=true`,
 						selected: true,
 					});
 				});
