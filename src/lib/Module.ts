@@ -37,6 +37,7 @@ export interface ModuleConstructor extends BaseModuleConstructor {
 		requireReload?: boolean;
 	};
 }
+
 export type PluginModuleConstructor = BaseModuleConstructor;
 
 export default abstract class Module {

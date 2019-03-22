@@ -1,11 +1,10 @@
-import Module, { envContext, ModuleConstructor } from '@/lib/Module';
+import InjectModule from '@/lib/InjectModule';
 import RegExpPattern from '@/utils/RegExpPattern';
 
 import { waitUntilDomLoaded } from '@/utils/helper';
 
 export const config = {
 	name: 'AlwaysJumpTo',
-	context: envContext.inject,
 	priority: 1,
 	run_at: RegExpPattern.videoUrlPattern,
 	storageOptions: {
@@ -16,12 +15,20 @@ export const config = {
 		title: '自动跳转至上次观看时间',
 		desc: '',
 	},
-} as ModuleConstructor;
+};
 
-export default class AlwaysJumpTo extends Module {
+export default class AlwaysJumpTo extends InjectModule {
 	public accountShareStatus: boolean | undefined;
 	constructor() {
-		super(config);
+		super({
+			listener: {
+				mutation: list => {
+				},
+				ajaxrequest: (host, payload) => {
+
+				}
+			},
+		});
 		this.accountShareStatus = undefined;
 	}
 
