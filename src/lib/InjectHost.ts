@@ -1,5 +1,7 @@
 import InjectModule from './InjectModule';
+import { getURLParameters } from '@/utils/helper';
 
+/* tslint:disable variable-name */
 export const enum HostEvent {
 	// tslint:disable typedef-whitespace
 	DomContentLoaded = 'domcontentloaded',
@@ -15,27 +17,27 @@ export const enum HostEvent {
 	// tslint:enable typedef-whitespace
 }
 
-class InjectHost {
+export default class InjectHost {
 	// Inject环境的模组
-	public injectModules: InjectModule[];
-	public host: Record<string, any>;
+	public injectInstance: InjectModule[];
+	public mutationObserver: MutationObserver;
+	// public host: Record<string, any>;
 
 	constructor(modules: Record<string, InjectModule>) {
-		this.injectModules = [];
-		this.host = {
-
-		};
-
+		this.injectInstance = [];
+		this.mutationObserver = new MutationObserver(this.handleMutation);
+		this.registerModules(modules);
 		this.injectHost();
 	}
 
-	public registerModule(module: InjectModule) {
-		for (let eventType in module.listener) {
-			module.listener[eventType]
+	public registerModules(modules) {
+		for (const key in modules) {
+			this.injectInstance.push(new modules[key]());
 		}
 	}
 
 	private injectXHR() {
+		const _this = this;
 		// tslint:disable object-literal-shorthand only-arrow-functions
 		// @ts-ignore
 		window.XMLHttpRequest = new Proxy(window.XMLHttpRequest, {
@@ -54,9 +56,23 @@ class InjectHost {
 								(async function() {
 									// responseType如果不是空的或者不是text则不执行
 									if (target.readyState === 4 && /^$|text/i.test(target.responseType)) {
-										for (const job of jobs.xhr) {
-											if (typeof job === 'function') {
-												const result = await job(target.responseText, container.requestData, target.responseURL, container.requestMethod);
+										for (const instance of _this.injectInstance) {
+											if (typeof instance.listener.xhrrequest === 'function') {
+												const result = await instance.listener.xhrrequest(
+													target.responseURL,
+													container.requestData,
+													container.requestMethod,
+													target.responseText,
+												);
+												if (result) container.responseText = result;
+											} else if (typeof instance.listener.xhrrequest === 'string') {
+												// @ts-ignore
+												const result = await instance[instance.listener.xhrrequest](
+													target.responseURL,
+													container.requestData,
+													container.requestMethod,
+													target.responseText,
+												);
 												if (result) container.responseText = result;
 											}
 										}
@@ -94,6 +110,7 @@ class InjectHost {
 	}
 
 	private injectAjax() {
+		const _this = this;
 		function doInject() {
 			// @ts-ignore
 			const originalAjax = $.ajax;
@@ -117,9 +134,9 @@ class InjectHost {
 					.then(r => oriSuccess(r))
 					.catch(e => oriError(e));
 
-				for (const job of jobs.ajax) {
-					if (typeof job === 'function') {
-						const result = job(param, oriResultTransformer);
+				for (const instance of _this.injectInstance) {
+					if (typeof instance.listener.ajaxrequest === 'function') {
+						const result = instance.listener.ajaxrequest(param, oriResultTransformer);
 						if (result) oriResultTransformer = result;
 					}
 				}
@@ -182,7 +199,26 @@ class InjectHost {
 		}
 	}
 
-	private injectHost() {
+	private handleMutation(mutationList: MutationRecord[]) {
+		for (const mutation of mutationList) {
+			console.log(mutation);
+		}
+	}
 
+	private injectMutation() {
+		this.mutationObserver.observe(document.documentElement, {
+			attributeOldValue: true,
+			attributes: true,
+			characterData: true,
+			characterDataOldValue: true,
+			childList: true,
+			subtree: true,
+		});
+	}
+
+	private injectHost() {
+		this.injectAjax();
+		this.injectXHR();
+		this.injectMutation();
 	}
 }

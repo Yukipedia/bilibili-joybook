@@ -19,33 +19,48 @@ export const config = {
 
 export default class AlwaysJumpTo extends InjectModule {
 	public accountShareStatus: boolean | undefined;
+
 	constructor() {
 		super({
+			name: 'AlwaysJumpTo',
 			listener: {
-				mutation: list => {
+				mutation: {
+					options: {
+						childList: true,
+						subtree: true,
+					},
+					handler: 'jump',
 				},
-				ajaxrequest: (host, payload) => {
-
-				}
+			},
+			run_at: RegExpPattern.homeUrlPattern,
+			storageOptions: {
+				status: 'on',
+			},
+			setting: {
+				title: '自动跳转至上次观看时间',
 			},
 		});
-		this.accountShareStatus = undefined;
+		// this.accountShareStatus = undefined;
 	}
 
-	public launch(moduleNsp) {
-		this.main(moduleNsp);
+	public jump() {
+		console.log('trigger');
 	}
 
-	public main(moduleNsp) {
-		// bilibili-player-video-toast-item-jump
-		waitUntilDomLoaded<HTMLElement>(
-			'.bilibili-player-video-toast-item-jump',
-			false,
-			() => window.player && typeof window.player.getState === 'function' && window.player.getState() === 'PLAYING',
-		)
-			.then(dom => {
-				dom.click();
-			})
-			.catch(e => joybook.error(e));
-	}
+	// public launch(moduleNsp) {
+	// 	this.main(moduleNsp);
+	// }
+
+	// public main(moduleNsp) {
+	// 	bilibili-player-video-toast-item-jump
+	// 	waitUntilDomLoaded<HTMLElement>(
+	// 		'.bilibili-player-video-toast-item-jump',
+	// 		false,
+	// 		() => window.player && typeof window.player.getState === 'function' && window.player.getState() === 'PLAYING',
+	// 	)
+	// 		.then(dom => {
+	// 			dom.click();
+	// 		})
+	// 		.catch(e => joybook.error(e));
+	// }
 }
