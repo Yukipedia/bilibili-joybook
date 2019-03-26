@@ -13,15 +13,12 @@ export interface InjectBaseModuleConstructor {
 export interface InjectModuleConstructor extends InjectBaseModuleConstructor {
 	readonly dependencies?: string[];
 
-	readonly listener: {
+	readonly listener?: {
 		// tslint:disable typedef-whitespace max-line-length
 		[HostEvent.DomContentLoaded]?: string | ((event: Event) => void);
 		[HostEvent.AjaxRequest]?     : string | ((host, payload: { requestURL: string, requestData: Record<string, string>, requestMethod: string, response }) => Promise<any> | void);
 		[HostEvent.XHRRequest]?      : string | ((requestURL: string, requestData: Record<string, string>, requestMethod: string, response) => Promise<any> | void);
-		[HostEvent.Mutation]?        : {
-			options: MutationObserverInit;
-			handler: string | ((mutationList: MutationRecord) => Promise<any> | void);
-		};
+		[HostEvent.Mutation]?        : string | ((mutationList: MutationRecord) => Promise<any> | void);
 		[HostEvent.PlayerBuffering]? : string | (() => Promise<any> | void);
 		[HostEvent.PlayerReady]?     : string | (() => Promise<any> | void);
 		[HostEvent.PlayerPlaying]?   : string | (() => Promise<any> | void);

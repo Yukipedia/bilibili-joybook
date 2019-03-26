@@ -1,22 +1,6 @@
 import InjectModule from '@/lib/InjectModule';
 import RegExpPattern from '@/utils/RegExpPattern';
 
-import { waitUntilDomLoaded } from '@/utils/helper';
-
-export const config = {
-	name: 'AlwaysJumpTo',
-	priority: 1,
-	run_at: RegExpPattern.videoUrlPattern,
-	storageOptions: {
-		switch: 'switch.alwaysjumpto',
-		defaultSwitch: true,
-	},
-	setting: {
-		title: '自动跳转至上次观看时间',
-		desc: '',
-	},
-};
-
 export default class AlwaysJumpTo extends InjectModule {
 	public accountShareStatus: boolean | undefined;
 
@@ -24,15 +8,9 @@ export default class AlwaysJumpTo extends InjectModule {
 		super({
 			name: 'AlwaysJumpTo',
 			listener: {
-				mutation: {
-					options: {
-						childList: true,
-						subtree: true,
-					},
-					handler: 'jump',
-				},
+				mutation: 'jump',
 			},
-			run_at: RegExpPattern.homeUrlPattern,
+			run_at: RegExpPattern.videoUrlPattern,
 			storageOptions: {
 				status: 'on',
 			},
@@ -40,27 +18,17 @@ export default class AlwaysJumpTo extends InjectModule {
 				title: '自动跳转至上次观看时间',
 			},
 		});
-		// this.accountShareStatus = undefined;
 	}
 
-	public jump() {
-		console.log('trigger');
+	public jump(mutation: MutationRecord) {
+		if (
+			mutation.type === 'childList' &&
+			(mutation.target as HTMLElement).classList.contains('bilibili-player-video-toast-bottom')
+		) {
+			const addedNodes = (mutation.addedNodes[0] as HTMLElement);
+			let jump;
+			addedNodes.className === 'bilibili-player-video-toast-item' && (jump = addedNodes.querySelector('.bilibili-player-video-toast-item-jump'));
+			jump && jump.click();
+		}
 	}
-
-	// public launch(moduleNsp) {
-	// 	this.main(moduleNsp);
-	// }
-
-	// public main(moduleNsp) {
-	// 	bilibili-player-video-toast-item-jump
-	// 	waitUntilDomLoaded<HTMLElement>(
-	// 		'.bilibili-player-video-toast-item-jump',
-	// 		false,
-	// 		() => window.player && typeof window.player.getState === 'function' && window.player.getState() === 'PLAYING',
-	// 	)
-	// 		.then(dom => {
-	// 			dom.click();
-	// 		})
-	// 		.catch(e => joybook.error(e));
-	// }
 }

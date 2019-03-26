@@ -25,14 +25,20 @@ export default class InjectHost {
 
 	constructor(modules: Record<string, InjectModule>) {
 		this.injectInstance = [];
-		this.mutationObserver = new MutationObserver(this.handleMutation);
 		this.registerModules(modules);
+		this.mutationObserver = new MutationObserver(this.handleMutation.bind(this));
 		this.injectHost();
 	}
 
 	public registerModules(modules) {
+		const href = window.location.href;
 		for (const key in modules) {
-			this.injectInstance.push(new modules[key]());
+			const instance = new modules[key]();
+			if (Array.isArray(instance.run_at) && instance.run_at.find(ex => ex.test(href))) {
+				this.injectInstance.push(instance);
+			} else if (instance.run_at.test(href)) {
+				this.injectInstance.push(instance);
+			}
 		}
 	}
 
@@ -201,16 +207,21 @@ export default class InjectHost {
 
 	private handleMutation(mutationList: MutationRecord[]) {
 		for (const mutation of mutationList) {
-			console.log(mutation);
+			for (const instance of this.injectInstance) {
+				if (!instance.listener.mutation) continue;
+				if (typeof instance.listener.mutation === 'string') {
+					instance[instance.listener.mutation](mutation);
+				} else if (typeof instance.listener.mutation === 'function') {
+					instance.listener.mutation(mutation);
+				}
+			}
 		}
 	}
 
 	private injectMutation() {
 		this.mutationObserver.observe(document.documentElement, {
-			attributeOldValue: true,
 			attributes: true,
 			characterData: true,
-			characterDataOldValue: true,
 			childList: true,
 			subtree: true,
 		});
