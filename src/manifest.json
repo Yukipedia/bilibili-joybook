@@ -22,7 +22,7 @@
 	],
 	"web_accessible_resources": [
 		"js/inject.js",
-		"img/svg/twotone-settings-24px.svg"
+		"img/twotone-settings-24px.svg"
 	],
 	"background": {
 		"scripts": ["background.js"],
