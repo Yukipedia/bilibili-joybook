@@ -11,7 +11,7 @@
 				<v-tooltip top>
 						<v-avatar slot="activator">
 							<img v-if="beneficiaryAccount" :src="beneficiaryAccount.face">
-							<img v-else src="@/assets/twotone-sentiment_dissatisfied-24px.svg">
+							<img v-else src="@/assets/img/svg/twotone-sentiment_dissatisfied-24px.svg">
 						</v-avatar>
 						<span> 你的账号 </span>
 				</v-tooltip>
@@ -33,7 +33,7 @@
 				:class="['justify-center', 'align-center']"
 			>
 				<v-btn icon small @click="clearAccount">
-					<img src="@/assets/twotone-delete-24px.svg">
+					<img src="@/assets/img/svg/twotone-delete-24px.svg">
 				</v-btn>
 			</v-flex>
 
@@ -46,7 +46,7 @@
 				<v-tooltip top>
 						<v-avatar slot="activator">
 							<img v-if="vipAccount" :src="vipAccount.face">
-							<img v-else src="@/assets/twotone-sentiment_dissatisfied-24px.svg">
+							<img v-else src="@/assets/img/svg/twotone-sentiment_dissatisfied-24px.svg">
 						</v-avatar>
 						<span> 拥有大会员的账号 </span>
 				</v-tooltip>

@@ -12,7 +12,7 @@ import { waitUntilDomLoaded } from '../../../../utils/helper';
 export default class OpenSettingBtn extends Vue {
 	public name: string = 'OpenSettingBtn';
 	public extensionId: string = window.joybook.id;
-	public settingsIcon: string = require('@/assets/twotone-settings-24px.svg');
+	public settingsIcon: string = require('@/assets/img/svg/twotone-settings-24px.svg');
 
 	@Prop({ type: String, default: '' }) public section!: string;
 

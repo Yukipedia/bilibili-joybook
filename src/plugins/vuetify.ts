@@ -1,4 +1,5 @@
-import '@/assets/mdi.css';
+import '@/assets/css/material-design-icons.css';
+import '@/assets/css/roboto.css';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
 
