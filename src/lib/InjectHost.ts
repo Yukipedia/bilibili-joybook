@@ -17,14 +17,22 @@ export const enum HostEvent {
 	// tslint:enable typedef-whitespace
 }
 
+// tslint:disable class-name
+export interface _HostEvent {
+	'domcontentloaded': jblib.DomContentLoaded;
+	'ajaxrequest': jblib.XHREvent;
+	'xhrrequest': jblib.AjaxEvent;
+	'mutation': jblib.MutationEvent;
+}
+// tslint:enable class-name
+
 export default class InjectHost {
 	// Inject环境的模组
-	public injectInstance: InjectModule[];
+	public injectInstances: InjectModule[] = [];
+	public suspendInstances: InjectModule[] = [];
 	public mutationObserver: MutationObserver;
-	// public host: Record<string, any>;
 
 	constructor(modules: Record<string, InjectModule>) {
-		this.injectInstance = [];
 		this.registerModules(modules);
 		this.mutationObserver = new MutationObserver(this.handleMutation.bind(this));
 		this.injectHost();
@@ -32,14 +40,22 @@ export default class InjectHost {
 
 	public registerModules(modules) {
 		const href = window.location.href;
+
 		for (const key in modules) {
 			const instance = new modules[key]();
-			if (Array.isArray(instance.run_at) && instance.run_at.find(ex => ex.test(href))) {
-				this.injectInstance.push(instance);
-			} else if (instance.run_at.test(href)) {
-				this.injectInstance.push(instance);
+			if (Array.isArray(instance.dependencies) && instance.dependencies.length) {
+				this.suspendInstances.push(instance);
+				continue;
+			}
+			if (Array.isArray(instance.run_at)) {
+				instance.run_at.find(ex => ex.test(href)) && this.injectInstances.push(instance);
+			} else {
+				instance.run_at.test(href) && this.injectInstances.push(instance);
 			}
 		}
+	}
+
+	private handleMessage() {
 	}
 
 	private injectXHR() {
@@ -62,24 +78,37 @@ export default class InjectHost {
 								(async function() {
 									// responseType如果不是空的或者不是text则不执行
 									if (target.readyState === 4 && /^$|text/i.test(target.responseType)) {
-										for (const instance of _this.injectInstance) {
-											if (typeof instance.listener.xhrrequest === 'function') {
-												const result = await instance.listener.xhrrequest(
-													target.responseURL,
-													container.requestData,
-													container.requestMethod,
-													target.responseText,
-												);
-												if (result) container.responseText = result;
-											} else if (typeof instance.listener.xhrrequest === 'string') {
-												// @ts-ignore
-												const result = await instance[instance.listener.xhrrequest](
-													target.responseURL,
-													container.requestData,
-													container.requestMethod,
-													target.responseText,
-												);
-												if (result) container.responseText = result;
+										for (const instance of _this.injectInstances) {
+											try {
+												instance.broadcast('xhrrequest', {
+													requestURL: target.responseURL,
+													requestData: container.requestData,
+													requestMethod: container.requestMethod,
+													response: target.responseText,
+												});
+
+												if (typeof instance.listener.xhrrequest === 'function') {
+													const result = await instance.listener['xhrrequest'].apply(instance, [{
+														requestURL: target.responseURL,
+														requestData: container.requestData,
+														requestMethod: container.requestMethod,
+														response: target.responseText,
+													}]);
+													if (result) container.responseText = result;
+												} else if (typeof instance.listener.xhrrequest === 'string') {
+													const result = await instance[instance.listener.xhrrequest].apply(instance, [
+														{
+															requestURL: target.responseURL,
+															requestData: container.requestData,
+															requestMethod: container.requestMethod,
+															response: target.responseText,
+														},
+													]);
+													if (result) container.responseText = result;
+												}
+											} catch (e) {
+												joybook.error(e);
+												throw e;
 											}
 										}
 									}
@@ -140,10 +169,34 @@ export default class InjectHost {
 					.then(r => oriSuccess(r))
 					.catch(e => oriError(e));
 
-				for (const instance of _this.injectInstance) {
-					if (typeof instance.listener.ajaxrequest === 'function') {
-						const result = instance.listener.ajaxrequest(param, oriResultTransformer);
-						if (result) oriResultTransformer = result;
+				for (const instance of _this.injectInstances) {
+					try {
+						instance.broadcast('ajaxrequest', {
+							response: param,
+							requestURL: param,
+							requestData: param,
+							requestMethod: param,
+						});
+						if (typeof instance.listener.ajaxrequest === 'function') {
+							const result = instance.listener.ajaxrequest.apply(instance, [{
+								response: param,
+								requestURL: param,
+								requestData: param,
+								requestMethod: param,
+							}]);
+							if (result) oriResultTransformer = result;
+						} else if (typeof instance.listener.ajaxrequest === 'string') {
+							const result = instance[instance.listener.ajaxrequest].apply(instance, [{
+								response: param,
+								requestURL: param,
+								requestData: param,
+								requestMethod: param,
+							}]);
+							if (result) oriResultTransformer = result;
+						}
+					} catch (e) {
+						joybook.error(e);
+						throw e;
 					}
 				}
 
@@ -207,14 +260,7 @@ export default class InjectHost {
 
 	private handleMutation(mutationList: MutationRecord[]) {
 		for (const mutation of mutationList) {
-			for (const instance of this.injectInstance) {
-				if (!instance.listener.mutation) continue;
-				if (typeof instance.listener.mutation === 'string') {
-					instance[instance.listener.mutation](mutation);
-				} else if (typeof instance.listener.mutation === 'function') {
-					instance.listener.mutation(mutation);
-				}
-			}
+			this.broadcast(this.injectInstances, HostEvent.Mutation, mutation);
 		}
 	}
 
@@ -227,9 +273,54 @@ export default class InjectHost {
 		});
 	}
 
+	private injectEvent() {
+		document.addEventListener('DOMContentLoaded', () => {
+			setTimeout(() => {
+				this.broadcast(this.injectInstances, HostEvent.DomContentLoaded);
+			}, 0);
+		});
+	}
+
+	private broadcast(instances: InjectModule[], eventType: keyof _HostEvent, payload?: any) {
+		for (const instance of instances) {
+			try {
+				if (instance._listener[eventType].length) instance.broadcast(eventType, payload);
+				if (!instance.listener[eventType]) continue;
+				if (typeof instance.listener[eventType] === 'function') {
+					// @ts-ignore
+					instance.listener[eventType].apply(instance, [payload]);
+				} else if (typeof instance.listener[eventType] === 'string') {
+					// @ts-ignore
+					instance[instance.listener[eventType]].apply(instance, [payload]);
+				}
+			} catch (e) {
+				joybook.error(e);
+				throw e;
+			}
+		}
+	}
+
+	private injectJoybookLogger() {
+		const ori_consoleLog = console.log;
+		function log(...msg: any): void {
+			return ori_consoleLog.call(this, '%cJoyBook:', `background: #00897B; color: #B2DFDB;`, ...msg);
+		}
+		function warn(...msg: any): void {
+			return ori_consoleLog.call(this, '%cJoyBook:', `background: #FB8C00; color: #FFCA28;`, ...msg);
+		}
+		function error(...msg: any): void {
+			return ori_consoleLog.call(this, '%cJoyBook:', `background: #D81B60; color: #F8BBD0;`, ...msg);
+		}
+		joybook.log = log;
+		joybook.warn = warn;
+		joybook.error = error;
+	}
+
 	private injectHost() {
+		this.injectJoybookLogger();
 		this.injectAjax();
 		this.injectXHR();
 		this.injectMutation();
+		this.injectEvent();
 	}
 }
