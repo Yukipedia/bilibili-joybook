@@ -44,10 +44,6 @@ module.exports = {
 					from: path.join(__dirname, './src/manifest.json'),
 					to: path.join(__dirname, './dist/'),
 				},
-				// {
-				// 	from :path.join(__dirname, './src/assets/twotone-settings-24px.svg'),
-				// 	to: path.join(__dirname, './dist/img/'),
-				// }
 			]),
 		],
 	},

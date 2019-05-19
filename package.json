@@ -1,7 +1,7 @@
 {
 	"name": "bilibili-joybook",
-	"version": "0.0.6",
-	"private": true,
+	"version": "0.0.7",
+	"private": false,
 	"author": "Yukipedia <pynds68@outlook.com>",
 	"scripts": {
 		"serve": "vue-cli-service build --mode development --watch",

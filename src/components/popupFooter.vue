@@ -14,7 +14,7 @@
 			<span>删除所有数据</span>
 		</v-tooltip> -->
 		<v-btn @click="gotoSettings" class="ma-0 mx-1" icon small>
-			<img src="@/assets/twotone-settings-24px.svg">
+			<img src="@/assets/img/svg/twotone-settings-24px.svg">
 		</v-btn>
 	</v-layout>
 </v-card>

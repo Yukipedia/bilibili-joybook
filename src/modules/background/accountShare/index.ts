@@ -25,6 +25,7 @@ const enum Direct {
 	commentDel =               'x/v2/reply/del',                                 // 删除评论
 	commentAction =            'x/v2/reply/action',                              // 👍
 	commentHate =              'x/v2/reply/hate',                                // 👎
+	commentReport =            'x/v2/reply/report',                              // 举报评论
 	/* 操作 */
 	relationStatus =           'x/relation',                                     // 关注的状态
 	relationTag =              'x/relation/tags',                                // 关注分组
@@ -170,6 +171,7 @@ export default class AccountShare extends Module {
 					new RegExp(Direct.commentDel, 'ig').test(details.url) ||
 					new RegExp(Direct.commentAction, 'ig').test(details.url) ||
 					new RegExp(Direct.commentHate, 'ig').test(details.url) ||
+					new RegExp(Direct.commentReport, 'ig').test(details.url) ||
 
 					new RegExp(Direct.relationStatus, 'ig').test(details.url) ||
 					new RegExp(Direct.relationTag, 'ig').test(details.url) ||

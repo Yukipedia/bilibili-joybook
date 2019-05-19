@@ -2,6 +2,8 @@
 
 [Google 线上应用程序商店](https://chrome.google.com/webstore/detail/iecammnlpogmogajmpdljiijmokjbpam)
 
+## [使用说明Wiki](https://github.com/Yukipedia/bilibili-joybook/wiki)
+
 ## 本地构建
 - 安装 [Node.js](https://nodejs.org) Current或者LTS版本
 - cd bilibili_joybook
