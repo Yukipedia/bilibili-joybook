@@ -1,51 +1,36 @@
-import Module, { envContext } from '@/lib/Module';
+import InjectModule from '@/lib/InjectModule';
+import { EXTENSION_ID } from '@/lib/extension';
 import RegExpPattern from '@/utils/RegExpPattern';
 import AVBlockerConfig from '@/modules/inject/avblocker/config';
 
-export default class AddToBlocklist extends Module {
+export default class AddToBlocklist extends InjectModule {
 	public tips: HTMLElement;
 
 	constructor() {
 		super({
 			name: 'plugin:addToBlocklist',
-			context: envContext.inject,
-			priority: 1,
-			// 不管有没有开启都显示这些按钮
-			/*dependencies: ['AVBlocker'], */
 			run_at: [RegExpPattern.videoUrlPattern, RegExpPattern.accountSpace, RegExpPattern.homeUrlPattern],
+			listener: {
+				domcontentloaded: 'launch',
+			},
 		});
 		this.tips = null as any;
 	}
 
-	public launch(moduleNsp) {
-		document.addEventListener('DOMContentLoaded', () => {
-			if (RegExpPattern.homeUrlPattern.test(window.location.href)) {
-				this.homepage();
-			} else if (RegExpPattern.videoUrlPattern.test(window.location.href)) {
-				this.videopage();
-			} else if (RegExpPattern.accountSpace.test(window.location.href)) {
-				this.userSpace(moduleNsp);
-			}
-		});
-
+	public launch() {
 		this.injectstyle();
-	}
-
-	public registerMutation(
-		node: Element,
-		callback: (mutationList: MutationRecord[]) => void,
-		init: MutationObserverInit = {
-			attributes: true,
-			childList: true,
-			subtree: true,
-		},
-	) {
-		new MutationObserver(callback).observe(node, init);
+		if (RegExpPattern.homeUrlPattern.test(window.location.href)) {
+			this.homepage();
+		} else if (RegExpPattern.videoUrlPattern.test(window.location.href)) {
+			this.videopage();
+		} else if (RegExpPattern.accountSpace.test(window.location.href)) {
+			this.userSpace();
+		}
 	}
 
 	public sendMessage<T>(callback: (response: T) => void) {
 		chrome.runtime.sendMessage(
-			window.joybook.id,
+			EXTENSION_ID,
 			{
 				name: 'serve',
 				cmd: 'get:storage',
@@ -101,32 +86,27 @@ export default class AddToBlocklist extends Module {
 
 	public homepage() {
 		// normal & special-recommend-module
-		new MutationObserver(mutationList => {
-			for (const mutation of mutationList) {
-				if (
-					mutation.type === 'childList' &&
-					mutation.addedNodes.length > 0 &&
+		this.addEventListener('mutation', mutation => {
+			if (
+				mutation.type === 'childList' &&
+				mutation.addedNodes.length > 0 &&
+				// @ts-ignore
+				mutation.target.className === 'storey-box clearfix'
+			) {
+				mutation.addedNodes.forEach(elem => {
 					// @ts-ignore
-					mutation.target.className === 'storey-box clearfix'
-				) {
-					mutation.addedNodes.forEach(elem => {
+					if (elem.className === 'spread-module') {
 						// @ts-ignore
-						if (elem.className === 'spread-module') {
-							// @ts-ignore
-							const anchor = elem.querySelector('a > div.pic');
-							anchor && anchor.appendChild(this.addToBlocklistBtn());
-							// @ts-ignore
-						} else if (elem.className === 'special-module special') {
-							// @ts-ignore
-							const anchor = elem.querySelector('a.pic > div.pic-box');
-							anchor && anchor.appendChild(this.addToBlocklistBtn());
-						}
-					});
-				}
+						const anchor = elem.querySelector('a > div.pic');
+						anchor && anchor.appendChild(this.addToBlocklistBtn());
+						// @ts-ignore
+					} else if (elem.className === 'special-module special') {
+						// @ts-ignore
+						const anchor = elem.querySelector('a.pic > div.pic-box');
+						anchor && anchor.appendChild(this.addToBlocklistBtn());
+					}
+				});
 			}
-		}).observe(document.querySelector('#app')!, {
-			childList: true,
-			subtree: true,
 		});
 
 		// recommend-module
@@ -141,7 +121,7 @@ export default class AddToBlocklist extends Module {
 	}
 
 	public videopage() {
-		if (document.querySelector('.stardust-video') && document.querySelector('#video-page-app')) /* stardustVideo */ {
+		if (document.querySelector('#video-page-app') && this.stardustVideo) /* stardustVideo */ {
 			const { wrap, icon } = this.createBtn('stardustvideo');
 			this.sendMessage<joybook.avblocker.FullBlockList>(response => {
 				this.ensureAidExist().then(() => {
@@ -157,19 +137,18 @@ export default class AddToBlocklist extends Module {
 					});
 				});
 			});
-			const callback = (mutationList: MutationRecord[]) => {
-				for (const mutation of mutationList) {
-					if (
-						mutation.type === 'attributes' &&
-						mutation.attributeName === 'title' &&
-						['like', 'coin', 'collect'].indexOf((mutation.target as HTMLElement).className.split(/\s/)[0]) !== -1
-					) {
-						const ops = document.querySelector('#arc_toolbar_report .ops')!;
-						ops.insertBefore(wrap, ops.querySelector('.share'));
-					}
+
+			const mutaionListener = this.addEventListener('mutation', mutation => {
+				if (
+					mutation.type === 'attributes' &&
+					mutation.attributeName === 'title' &&
+					['like', 'coin', 'collect'].indexOf((mutation.target as HTMLElement).className.split(/\s/)[0]) !== -1
+				) {
+					const ops = document.querySelector('#arc_toolbar_report .ops')!;
+					ops.insertBefore(wrap, ops.querySelector('.share'));
+					this.removeEventListener('mutation', mutaionListener);
 				}
-			};
-			this.registerMutation(document.querySelector('#arc_toolbar_report .ops')!, callback);
+			});
 		} else if (document.querySelector('#media_module')) /* stardustBangumi */ {
 			const { wrap, icon, text } = this.createBtn('stardustbangumi');
 			this.sendMessage<joybook.avblocker.FullBlockList>(response => {
@@ -199,17 +178,16 @@ export default class AddToBlocklist extends Module {
 				});
 			});
 			const toolbar = document.querySelector('.media-tool-bar')!;
-			const callback = (mutationList: MutationRecord[]) => {
-				for (const mutation of mutationList) {
-					if (
-						mutation.type === 'attributes' &&
-						mutation.attributeName === 'report-id'
-					) {
-						toolbar.insertBefore(wrap, toolbar.querySelector('.btn-follow'));
-					}
+
+			const mutaionListener = this.addEventListener('mutation', mutation => {
+				if (
+					mutation.type === 'attributes' &&
+					mutation.attributeName === 'report-id'
+				) {
+					toolbar.insertBefore(wrap, toolbar.querySelector('.btn-follow'));
+					this.removeEventListener('mutation', mutaionListener);
 				}
-			};
-			this.registerMutation(toolbar, callback);
+			});
 		} else {
 			const { wrap, icon, text } = this.createBtn('video');
 			this.sendMessage<joybook.avblocker.FullBlockList>(response => {
@@ -230,68 +208,36 @@ export default class AddToBlocklist extends Module {
 						});
 					});
 			});
-			const callback = (mutationList: MutationRecord[]) => {
-				for (const mutation of mutationList) {
-					if (
-						mutation.type === 'attributes' &&
-						mutation.attributeName === 'title' &&
-						(mutation.target as HTMLElement).getAttribute('report-id')
-					) {
-						try {
-							document.querySelector('.header-info .count-wrapper')!.appendChild(wrap);
-						} catch (e) {
-							document.querySelector('.video-info-m div.number')!.appendChild(wrap);
-						}
+
+			const mutaionListener = this.addEventListener('mutation', mutation => {
+				if (
+					mutation.type === 'attributes' &&
+					mutation.attributeName === 'title' &&
+					(mutation.target as HTMLElement).getAttribute('report-id')
+				) {
+					if (this.isVideo) {
+						document.querySelector('.video-info-m div.number')!.appendChild(wrap);
+					} else {
+						document.querySelector('.header-info .count-wrapper')!.appendChild(wrap);
 					}
+					this.removeEventListener('mutation', mutaionListener);
 				}
-			};
-			try {
-				this.registerMutation(document.querySelector('#bangumi_header .header-info .count-wrapper')!, callback);
-			} catch (e) {
-				this.registerMutation(document.querySelector('#viewbox_report .number')!, callback);
-			}
+			});
 		}
 	}
 
-	public userSpace(moduleNsp) {
-		moduleNsp.MXHRR.addXHRJob((responseText: string, requestData: Record<string, string>, requestURL: string, requestMethod: string) => {
-			return new Promise(resolve => {
-				if (/\/x\/relation\/modify/i.test(requestURL)) {
-					chrome.runtime.sendMessage(
-						window.joybook.id,
-						{
-							name: 'serve',
-							cmd: 'get:storage',
-							payload: [AVBlockerConfig.storageOptions.area, AVBlockerConfig.storageOptions.location],
-						},
-						(response: joybook.avblocker.FullBlockList) => {
-							if (response.global.concatBlacklist) {
-								const response = JSON.parse(responseText);
-								if (response.code === 0 && requestData.act === '5') {
-									this.addToBlocklist('owner', window.mid);
-								} else if (response.code === 0 && requestData.act === '6') {
-									this.removeFromBlocklist('owner', window.mid);
-								}
-
-							}
-							return resolve();
-						},
-					);
-				} else {
-					return resolve();
-				}
-			});
-		});
+	public userSpace() {
+		let listitem: HTMLElement;
 
 		chrome.runtime.sendMessage(
-			window.joybook.id,
+			EXTENSION_ID,
 			{
 				name: 'serve',
 				cmd: 'get:storage',
 				payload: [AVBlockerConfig.storageOptions.area, AVBlockerConfig.storageOptions.location],
 			},
 			(response: joybook.avblocker.FullBlockList) => {
-				const listitem = document.createElement('li');
+				listitem = document.createElement('li');
 				listitem.classList.add('be-dropdown-item');
 				if (response.global.owner.includes(window.mid)) listitem.classList.add('added');
 				listitem.innerText = listitem.classList.contains('added') ? '从屏蔽列表移除' : '添加到屏蔽列表';
@@ -307,11 +253,39 @@ export default class AddToBlocklist extends Module {
 						listitem.innerText = '从屏蔽列表移除';
 					}
 				});
-
-				const menu = document.querySelector('.be-dropdown.h-add-to-black .be-dropdown-menu');
-				menu && menu.insertBefore(listitem, menu.firstChild);
 			},
 		);
+
+		// 监听B站黑名单请求
+		this.addEventListener('xhrrequest', ({response, requestData, requestURL}) => {
+			if (/\/x\/relation\/modify/i.test(requestURL)) {
+				chrome.runtime.sendMessage(
+					EXTENSION_ID,
+					{
+						name: 'serve',
+						cmd: 'get:storage',
+						payload: [AVBlockerConfig.storageOptions.area, AVBlockerConfig.storageOptions.location],
+					},
+					(res: joybook.avblocker.FullBlockList) => {
+						if (res.global.concatBlacklist) {
+							const res = JSON.parse(response);
+							if (res.code === 0 && requestData.act === '5') {
+								this.addToBlocklist('owner', window.mid);
+							} else if (res.code === 0 && requestData.act === '6') {
+								this.removeFromBlocklist('owner', window.mid);
+							}
+						}
+					},
+				);
+			}
+		});
+
+		const mutaionListener = this.addEventListener('mutation', mutaion => {
+			if (mutaion.type === 'attributes' && (mutaion.target as HTMLElement).classList.contains('be-dropdown-menu')) {
+				const menu = document.querySelector('.be-dropdown .be-dropdown-menu');
+				menu && menu.insertBefore(listitem, menu.firstChild) && this.removeEventListener('mutation', mutaionListener);
+			}
+		});
 	}
 
 	public addToBlocklistBtn() {
@@ -324,8 +298,8 @@ export default class AddToBlocklist extends Module {
 		addToBlocklist.className = 'add-to-blocklist-trigger a-blocklist';
 
 		addToBlocklist.addEventListener('mouseover', ev => {
-			const rect = ev.srcElement ? ev.srcElement.getBoundingClientRect() : null;
-			const added = ev.srcElement ? ev.srcElement.classList.contains('added') : false;
+			const rect = ev.target ? (ev.target as HTMLElement).getBoundingClientRect() : null;
+			const added = ev.target ? (ev.target as HTMLElement).classList.contains('added') : false;
 			if (rect) {
 				this.tips.style.top = `${rect.top + document.documentElement.scrollTop - 30}px`;
 				this.tips.style.left = `${rect.left - 39}px`;
@@ -350,19 +324,19 @@ export default class AddToBlocklist extends Module {
 		addToBlocklist.addEventListener('click', ev => {
 			ev.stopPropagation();
 			ev.preventDefault();
-			const rect = ev.srcElement ? ev.srcElement.getBoundingClientRect() : null;
-			const added = ev.srcElement ? ev.srcElement.classList.contains('added') : false;
-			if (rect && ev.srcElement && ev.srcElement.parentElement) {
-				const linkElem = ev.srcElement.parentElement.querySelector('a') || ev.srcElement.parentElement.parentElement;
+			const rect = ev.target ? (ev.target as HTMLElement).getBoundingClientRect() : null;
+			const added = ev.target ? (ev.target as HTMLElement).classList.contains('added') : false;
+			if (rect && ev.target && (ev.target as HTMLElement).parentElement) {
+				const linkElem = (ev.target as HTMLElement).parentElement!.querySelector('a') || (ev.target as HTMLElement).parentElement!.parentElement;
 				if (!linkElem || linkElem.nodeName !== 'A') return;
 				const aid = linkElem.getAttribute('href')!.split('/')[2].replace(/av/i, '');
 				if (added) {
 					this.tips.style.left = `${rect.left - 39}px`;
 					this.tips.innerText = '添加到屏蔽列表';
-					ev.srcElement.classList.remove('added');
+					(ev.target as HTMLElement).classList.remove('added');
 					this.removeFromBlocklist('aid', +aid);
 				} else {
-					ev.srcElement.classList.add('added');
+					(ev.target as HTMLElement).classList.add('added');
 					this.tips.style.left = `${rect.left - 9}px`;
 					this.tips.innerText = '移除';
 					this.addToBlocklist('aid', +aid);
@@ -377,7 +351,7 @@ export default class AddToBlocklist extends Module {
 		const { storageOptions } = AVBlockerConfig;
 		const { area, location } = storageOptions;
 		chrome.runtime.sendMessage(
-			window.joybook.id,
+			EXTENSION_ID,
 			{
 				name: 'serve',
 				cmd: 'get:storage',
@@ -387,7 +361,7 @@ export default class AddToBlocklist extends Module {
 				const index = response.indexOf(value);
 				if (index !== -1) return;
 				chrome.runtime.sendMessage(
-					window.joybook.id,
+					EXTENSION_ID,
 					{
 						name: 'serve',
 						cmd: 'set:storage',
@@ -402,7 +376,7 @@ export default class AddToBlocklist extends Module {
 		const { storageOptions } = AVBlockerConfig;
 		const { area, location } = storageOptions;
 		chrome.runtime.sendMessage(
-			window.joybook.id,
+			EXTENSION_ID,
 			{
 				name: 'serve',
 				cmd: 'get:storage',
@@ -413,7 +387,7 @@ export default class AddToBlocklist extends Module {
 				if (existed >= 0) {
 					response.splice(existed, 1);
 					chrome.runtime.sendMessage(
-						window.joybook.id,
+						EXTENSION_ID,
 						{
 							name: 'serve',
 							cmd: 'set:storage',

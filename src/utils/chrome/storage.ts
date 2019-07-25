@@ -24,17 +24,14 @@ const getChromeStorage = (): Promise<{local: {}, sync: {}}> => {
 	});
 };
 
-/**
- * @example 如果想使用这个类 你必须使用以下代码获取实例
- * const storage = await new ChromeStorageAsync();
- * storage.toggle('local', 'dot.prop', 'something')
- */
 export default class ChromeAsyncStorage extends EventEmitter {
 	private storageArea: ChromeAsyncStorageArea;
+	private ready: boolean;
 
 	constructor() {
 		super();
 		this.storageArea = { local: {}, sync: {} };
+		this.ready = false;
 
 		// @ts-ignore
 		chrome.storage.onChanged.addListener((changes, nsp: 'local' | 'sync') => {
@@ -51,8 +48,20 @@ export default class ChromeAsyncStorage extends EventEmitter {
 			.then(result => {
 				this.storage.local = result.local;
 				this.storage.sync = result.sync;
+				this.ready = true;
 				this.emit('ready');
 			});
+	}
+
+	public untilReady() {
+		return new Promise(resolve => {
+			if (this.ready) return resolve();
+			const walk = () => {
+				if (this.ready) return resolve();
+				return requestAnimationFrame(walk);
+			};
+			walk();
+		});
 	}
 
 	public get storage() {
@@ -69,6 +78,7 @@ export default class ChromeAsyncStorage extends EventEmitter {
 
 	public get<T>(nsp: keyof ChromeAsyncStorageArea, dotOperate: string, defaultValue?: any): T {
 		if (typeof dotOperate === 'undefined') return defaultValue;
+		if (dotOperate.split('.')[0] !== 'module') dotOperate = 'module.' + dotOperate;
 		return dotProp.get(this.storage[nsp], dotOperate, defaultValue);
 	}
 

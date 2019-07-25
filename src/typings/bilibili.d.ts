@@ -382,9 +382,9 @@ declare namespace bili {
 
 	// TODO: finish this list
 	interface Player {
-		addEventListener(b?, c?): void;
-		destroy(b): void;
-		directiveDispatcher(b): void;
+		addEventListener(b?: any, c?: any): void;
+		destroy(b: any): void;
+		directiveDispatcher(b: any): void;
 		exitFullScreen(): void;
 		getBufferRate(): number;
 		getCurrentTime(): number;
@@ -403,8 +403,8 @@ declare namespace bili {
 		logger(): false;
 		logger(b: boolean): undefined;
 		mode(b: any): void;
-		next(b?, c?, e?): void;
-		option(b, c): void;
+		next(b?: any, c?: any, e?: any): void;
+		option(b: any, c: any): void;
 		pause(): void;
 		play(): void;
 		prev(): void;

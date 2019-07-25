@@ -38,29 +38,21 @@ export default class Serve extends Module {
 		chrome.runtime.onMessage.addListener(this.handleMessage.bind(this));
 		// chrome.webRequest.onBeforeSendHeaders.addListener(this.handleRequest.bind(this));
 
-
-		// TODO: 完成使用B站黑名单的功能
-		// const blocklist = document.createElement('iframe');
-		// blocklist.src = 'https://account.bilibili.com/account/blacklist';
-		// blocklist.id = 'test';
-
-		// document.body.appendChild(blocklist);
-
-		const lastCollectTime = Number(localStorage.getItem('lastCollectTime'));
-		if (lastCollectTime) {
-			if (Date.now() - lastCollectTime >= 1200000) {
-				await this.collectRankingRegionData();
-				setInterval(() => this.collectRankingRegionData(), 1200000);
-			} else {
-				// 如果有最后收集时间 但是时间不大于20分钟
-				setTimeout(() => {
-					this.collectRankingRegionData().then(() => setInterval(() => this.collectRankingRegionData(), 1200000));
-				}, 1200000 - (Date.now() - lastCollectTime));
-			}
-		} else if (!lastCollectTime) {
-			await this.collectRankingRegionData();
-			setInterval(() => this.collectRankingRegionData(), 1200000);
-		}
+		// const lastCollectTime = Number(localStorage.getItem('lastCollectTime'));
+		// if (lastCollectTime) {
+		// 	if (Date.now() - lastCollectTime >= 1200000) {
+		// 		await this.collectRankingRegionData();
+		// 		setInterval(() => this.collectRankingRegionData(), 1200000);
+		// 	} else {
+		// 		// 如果有最后收集时间 但是时间不大于20分钟
+		// 		setTimeout(() => {
+		// 			this.collectRankingRegionData().then(() => setInterval(() => this.collectRankingRegionData(), 1200000));
+		// 		}, 1200000 - (Date.now() - lastCollectTime));
+		// 	}
+		// } else if (!lastCollectTime) {
+		// 	await this.collectRankingRegionData();
+		// 	setInterval(() => this.collectRankingRegionData(), 1200000);
+		// }
 	}
 
 	private async collectRankingRegionData() {

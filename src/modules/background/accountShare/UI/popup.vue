@@ -67,10 +67,10 @@
 
 <script lang='ts'>
 import { Component, Vue } from 'vue-property-decorator';
-import ChromeAsyncCookies from '../../../../utils/chrome/cookies';
-import ChromeAsyncStorage from '../../../../utils/chrome/storage';
-import ChromeAsyncTabs from '../../../../utils/chrome/tabs';
-import { config } from '../index';
+import ChromeAsyncCookies from '@/utils/chrome/cookies';
+import ChromeAsyncStorage from '@/utils/chrome/storage';
+import ChromeAsyncTabs from '@/utils/chrome/tabs';
+import config from '../config';
 
 @Component
 export default class AccountSharePUI extends Vue {
@@ -80,41 +80,28 @@ export default class AccountSharePUI extends Vue {
 	public chromeTabs: ChromeAsyncTabs = new ChromeAsyncTabs();
 	public render: boolean = true;
 
-	get storelocation() {
-		return config.storageOptions.location;
-	}
-
-	get storearea() {
-		return config.storageOptions.area;
-	}
-
-	get mainSwitch() {
-		if (!this.isMounted) return false;
-		return this.chromeStorage.get('local', 'settings.switch.main');
-	}
-
 	get beneficiaryAccount() {
 		if (!this.isMounted) return false;
-		return this.chromeStorage.get(this.storearea, `${this.storelocation}.account.beneficiary.data`);
+		return this.chromeStorage.get(config.storageOptions.area, `module.${config.name}.database.account.beneficiary.data`);
 	}
 
 	get vipAccount() {
 		if (!this.isMounted) return false;
-		return this.chromeStorage.get(this.storearea, `${this.storelocation}.account.vip.data`);
+		return this.chromeStorage.get(config.storageOptions.area, `module.${config.name}.database.account.vip.data`);
 	}
 
 	public clearAccount() {
-		this.chromeStorage.remove(this.storearea, `${this.storelocation}.account`);
+		this.chromeStorage.remove(config.storageOptions.area, `module.${config.name}.database.account`);
 	}
 
 	public useCurrentLoginAccountAs(type: 'beneficiary' | 'vip') {
-		const cookies = this.chromeCookies.cookies.filter(v => ['stardustvideo', 'stardustpgcv', 'CURRENT_QUALITY', 'CURRENT_FNVAL'].indexOf(v.name) === -1 ? true : false);
+		const cookies = this.chromeCookies.cookies.filter(v => ['stardustvideo', 'stardustpgcv', 'CURRENT_QUALITY', 'CURRENT_FNVAL'].indexOf(v.name) === -1);
 		this.fetchAccountDetails(type)
-			.then(() => this.chromeStorage.set(this.storearea, `${this.storelocation}.account.${type}.cookies`, cookies))
+			.then(() => this.chromeStorage.set(config.storageOptions.area, `module.${config.name}.database.account.${type}.cookies`, cookies))
 			.then(() => this.chromeCookies.removeAll('https://www.bilibili.com'))
 			.then(async () => {
 				if (this.beneficiaryAccount && this.vipAccount) {
-					const cookies = this.chromeStorage.get<chrome.cookies.Cookie[]>(this.storearea, `${this.storelocation}.account.beneficiary.cookies`);
+					const cookies = this.chromeStorage.get<chrome.cookies.Cookie[]>(config.storageOptions.area, `module.${config.name}.database.account.beneficiary.cookies`);
 					return this.chromeCookies.setAll(cookies, 'https://www.bilibili.com');
 				}
 				return Promise.resolve();
@@ -136,16 +123,17 @@ export default class AccountSharePUI extends Vue {
 			this.axios.get<bili.NavData>(`https://api.bilibili.com/x/web-interface/nav?ts=${Date.now()}`)
 				.then(result => result.data)
 				.then(accDetails => {
+					console.log(accDetails);
 					if (!accDetails.data.isLogin) return reject(accDetails.message);
-					this.chromeStorage.set(this.storearea, `${this.storelocation}.account.${type}.data`, accDetails.data)
+					this.chromeStorage.set(config.storageOptions.area, `module.${config.name}.database.account.${type}.data`, accDetails.data)
 						.then(resolve);
 				});
 		});
 	}
 
 	public deleteAccountCookies() {
-		this.chromeStorage.remove(this.storearea, `${this.storelocation}.account.beneficiary`)
-			.then(() => this.chromeStorage.remove(this.storearea, `${this.storelocation}.account.vip`))
+		this.chromeStorage.remove(config.storageOptions.area, `module.${config.name}.database.account.beneficiary`)
+			.then(() => this.chromeStorage.remove(config.storageOptions.area, `module.${config.name}.database.account.vip`))
 			.catch(e => {
 				throw new Error(e);
 			});
@@ -154,8 +142,8 @@ export default class AccountSharePUI extends Vue {
 	public created() {
 		this.chromeStorage.once('ready', () => {
 			// 如果模块没有开启 不渲染此DOM
-			const status = this.chromeStorage.get('local', config.storageOptions.switch);
-			if (!status) {
+			const status = this.chromeStorage.get(config.storageOptions.statusArea, `module.${config.name}.status`);
+			if (status === 'off') {
 				this.render = false;
 			}
 		});

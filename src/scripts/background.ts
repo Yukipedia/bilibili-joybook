@@ -1,16 +1,14 @@
-import { envContext } from '@/lib/Module';
-import ModuleManager from '@/lib/ModuleManager';
+import BackgroundHost from '@/lib/BackgroundHost';
 import AccountShare from '@/modules/background/accountShare';
 import BlockConnection from '@/modules/background/blockConnection';
-import Serve from '@/modules/background/serve';
+// import Giovanni from '@/modules/background/giovanni';
+import '@/plugins/google-analytics';
 
-const backgroundModules = {
-	AccountShare,
+new BackgroundHost({
+	// Giovanni,
 	BlockConnection,
-	Serve,
-};
-
-new ModuleManager({ env: envContext.background, modules: backgroundModules as any });
+	AccountShare,
+});
 
 chrome.runtime.onInstalled.addListener(details => {
 	if (details.reason === 'install') {

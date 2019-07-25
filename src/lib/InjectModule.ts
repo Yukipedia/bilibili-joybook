@@ -1,25 +1,21 @@
-import axios, { AxiosInstance } from 'axios';
-import RegExpPattern from '@/utils/RegExpPattern';
-
-import {
-	_HostEvent,
-	HostEvent,
-} from './InjectHost';
 import { parseCookie } from '@/utils/helper';
+import RegExpPattern from '@/utils/RegExpPattern';
+import axios, { AxiosInstance } from 'axios';
+import { HostEvent } from './InjectHost';
 
-export interface InjectBaseModuleConstructor {
+export interface IInjectBaseModuleConstructor {
 	readonly name: string;
 	readonly run_at?: RegExp | RegExp[];
 }
 
-export interface InjectModuleConstructor extends InjectBaseModuleConstructor {
+export interface IInjectModuleConstructor extends IInjectBaseModuleConstructor {
 	readonly dependencies?: string[];
 
 	readonly listener: {
 		// tslint:disable typedef-whitespace max-line-length
 		[HostEvent.DomContentLoaded]?: string | ((event: Event) => void);
-		[HostEvent.AjaxRequest]?     : string | ((payload: jblib.AjaxEvent) => Promise<any> | void);
-		[HostEvent.XHRRequest]?      : string | ((payload: jblib.XHREvent) => Promise<any> | void);
+		[HostEvent.AjaxRequest]?     : string | ((payload: joybook.InjectHost.AjaxEvent) => Promise<any> | void);
+		[HostEvent.XHRRequest]?      : string | ((payload: joybook.InjectHost.XHREvent) => Promise<any> | void);
 		[HostEvent.Mutation]?        : string | ((mutationList: MutationRecord) => Promise<any> | void);
 		[HostEvent.PlayerBuffering]? : string | (() => Promise<any> | void);
 		[HostEvent.PlayerReady]?     : string | (() => Promise<any> | void);
@@ -32,8 +28,8 @@ export interface InjectModuleConstructor extends InjectBaseModuleConstructor {
 
 	readonly storageOptions: {
 		area?: 'local' | 'sync';
+		statusArea?: 'local' | 'sync';
 		status: 'on' | 'off';
-		location?: string;
 	};
 
 	readonly setting: {
@@ -44,32 +40,31 @@ export interface InjectModuleConstructor extends InjectBaseModuleConstructor {
 	};
 }
 
-export type InjectPluginModuleConstructor = InjectBaseModuleConstructor;
+export type InjectPluginModuleConstructor = IInjectBaseModuleConstructor;
 
 export default abstract class InjectModule {
-	public readonly name: InjectModuleConstructor['name'];
-	public readonly run_at: InjectModuleConstructor['run_at'];
-	public readonly dependencies: InjectModuleConstructor['dependencies'];
-	public          listener: InjectModuleConstructor['listener'];
+	public readonly name: IInjectModuleConstructor['name'];
+	public readonly run_at: RegExp | RegExp[];
+	public readonly dependencies: IInjectModuleConstructor['dependencies'];
+	public          listener: IInjectModuleConstructor['listener'];
 	public          _listener: {[index: string]: any[]};
-	public readonly storageOptions: InjectModuleConstructor['storageOptions'];
-	public readonly setting: InjectModuleConstructor['setting'];
-	public readonly axios: AxiosInstance;
+	public readonly storageOptions: IInjectModuleConstructor['storageOptions'];
+	public readonly setting: IInjectModuleConstructor['setting'];
+	public readonly axios: AxiosInstance = axios;
 
-	constructor(options: InjectModuleConstructor | InjectPluginModuleConstructor) {
+	constructor(options: IInjectModuleConstructor | InjectPluginModuleConstructor) {
 		this.name = options.name;
 		this.run_at = options.run_at || /./;
-		this.dependencies = (options as InjectModuleConstructor).dependencies;
-		this.listener = (options as InjectModuleConstructor).listener || {};
+		this.dependencies = (options as IInjectModuleConstructor).dependencies;
+		this.listener = (options as IInjectModuleConstructor).listener || {};
 		this._listener = {
 			ajaxrequest: [],
 			xhrrequest: [],
 			mutation: [],
 			domcontentloaded: [],
 		};
-		this.storageOptions = (options as InjectModuleConstructor).storageOptions;
-		this.setting = (options as InjectModuleConstructor).setting;
-		this.axios = axios;
+		this.storageOptions = (options as IInjectModuleConstructor).storageOptions;
+		this.setting = (options as IInjectModuleConstructor).setting;
 	}
 
 	public get isVideo() {
@@ -84,13 +79,16 @@ export default abstract class InjectModule {
 		return parseCookie<any>(document.cookie).stardustpgcv === '0606';
 	}
 
-	public broadcast<K extends keyof _HostEvent>(eventType: K, ev: _HostEvent[K]) {
+	public broadcast<K extends keyof joybook.InjectHost.HostEvent>(eventType: K, ev: joybook.InjectHost.HostEvent[K]) {
 		for (const listener of this._listener[eventType]) {
 			typeof listener !== 'undefined' && listener(ev);
 		}
 	}
 
-	public addEventListener<K extends keyof _HostEvent>(eventType: K, listener: (ev: _HostEvent[K]) => any): number {
+	public addEventListener<K extends keyof joybook.InjectHost.HostEvent>(
+		eventType: K,
+		listener: (ev: joybook.InjectHost.HostEvent[K]) => any,
+	): number {
 		const _listener = this._listener[eventType];
 
 		if (Array.isArray(this._listener[eventType])) {
@@ -100,10 +98,10 @@ export default abstract class InjectModule {
 		return -1;
 	}
 
-	public removeEventListener<K extends keyof _HostEvent>(eventType: K, listenerIndex?: number): boolean {
+	public removeEventListener<K extends keyof joybook.InjectHost.HostEvent>(eventType: K, listenerIndex?: number): boolean {
 		if (!Array.isArray(this._listener[eventType])) return false;
 
-		typeof listenerIndex === 'number' ? delete this._listener[eventType][listenerIndex] : this.listener[eventType as string] = undefined;
+		typeof listenerIndex === 'number' ? delete this._listener[eventType][listenerIndex] : this.listener[eventType as HostEvent] = undefined;
 		return true;
 	}
 }

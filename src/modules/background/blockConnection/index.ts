@@ -1,11 +1,9 @@
-import Module, { envContext } from '@/lib/Module';
+import BackgroundModule from '@/lib/BackgroundModule';
 
-export default class BlockConnection extends Module {
+export default class BlockConnection extends BackgroundModule {
 	constructor() {
 		super({
 			name: 'BlockConnection',
-			context: envContext.background,
-			priority: 1,
 		});
 	}
 

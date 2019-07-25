@@ -70,18 +70,27 @@ function waitUntilDomLoaded<T extends HTMLElement | Element | HTMLElement[] | El
 	});
 }
 
-export const filterNonUnique = arr => arr.filter(i => arr.indexOf(i) === arr.lastIndexOf(i));
+export const filterNonUnique = (arr: any[]) => arr.filter(i => arr.indexOf(i) === arr.lastIndexOf(i));
 
-export const filterNonUniqueBy = (arr, fn) => arr.filter((v, i) => arr.every((x, j) => (i === j) === fn(v, x, i, j)));
+export const filterNonUniqueBy = (
+	arr: any[],
+	fn: (v: any, x: any, i: any, j: any) => boolean,
+) => arr.filter((v, i) => arr.every((x, j) => (i === j) === fn(v, x, i, j)));
 
-export const getURLParameters = url =>
+export const getURLParameters = (url: string) =>
 	(url.match(/([^?=&]+)(=([^&]*))/g) || []).reduce(
-		(a, v) => ((a[v.slice(0, v.indexOf('='))] = v.slice(v.indexOf('=') + 1)), a),
+		(a: any, v) => ((a[v.slice(0, v.indexOf('='))] = v.slice(v.indexOf('=') + 1)), a),
 		{},
 	);
+
+function typeHelper(arg: RegExp): 'RegExp';
+function typeHelper(arg: any) {
+	return Object.prototype.toString.call(arg).replace(/\[\]/, '').split('\0')[1];
+}
 
 export {
 	waitUntilDomConditionLoaded,
 	waitUntilDomLoaded,
 	parseCookie,
+	typeHelper,
 };

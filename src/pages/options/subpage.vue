@@ -1,11 +1,11 @@
 <script lang='ts'>
-import Optionsable from '@/components/mixins/Optionsable';
 import { CreateElement } from 'vue';
 import { Component, Prop, Vue, Watch } from 'vue-property-decorator';
 import { VBtn, VIcon, VToolbar  } from 'vuetify/lib';
+import { NavigationGuard, Route } from 'vue-router';
 
 @Component
-export default class SettingSubpage extends Optionsable {
+export default class SettingSubpage extends Vue {
 	public name: string = 'settingSubpage';
 
 	@Prop({
@@ -18,15 +18,14 @@ export default class SettingSubpage extends Optionsable {
 		},
 	}) public moduleName!: string;
 
-
 	public get title() {
 		return this.configuration[this.moduleName.toLowerCase()] ? this.configuration[this.moduleName.toLowerCase()].name : '';
 	}
 
 	// 如果不存在这个界面组件那就返回主页
-	public beforeRouteEnter(to, from, next) {
+	public beforeRouteEnter: NavigationGuard = (to, from, next) => {
 		next(vm => {
-			if (!vm.optionsInterface[to.params ? to.params.moduleName.toLowerCase() : undefined]) {
+			if (!vm.optionsInterface[to.params ? to.params.moduleName.toLowerCase() : -1]) {
 				vm.$router.replace({ path: '/' });
 			}
 		});

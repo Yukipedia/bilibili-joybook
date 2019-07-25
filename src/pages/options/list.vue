@@ -29,7 +29,6 @@
 </template>
 
 <script lang='ts'>
-import Optionsable from '@/components/mixins/Optionsable';
 import ChromeAsyncStorage from '@/utils/chrome/storage';
 import { Component, Vue } from 'vue-property-decorator';
 
@@ -39,31 +38,30 @@ Vue.component('module-switch', {
 	props: ['config'],
 	data() {
 		return {
-			switch: this.config.storageOptions.defaultSwitch,
+			status: this.config.storageOptions.status,
 			storage: new ChromeAsyncStorage(),
 		};
 	},
 	watch: {
-		switch(val) {
-			console.log(val);
-			this.storage.set('local', this.config.storageOptions.switch, val);
+		status(val) {
+			this.storage.set(this.config.storageOptions.statusArea, `module.${this.config.name}.status`, val);
 		},
 	},
 	created() {
 		this.storage.once('ready', () => {
-			this.switch = this.storage.get('local', this.config.storageOptions.switch);
+			this.status = this.storage.get(this.config.storageOptions.statusArea, `module.${this.config.name}.status`);
 		});
 		this.storage.init();
 	},
 	render(h) {
 		return h('v-switch', {
 			props: {
-				inputValue: this.switch,
+				inputValue: this.status === 'on',
 				hideDetails: true,
 			},
 			on: {
-				change: evnet => {
-					this.switch = !this.switch;
+				change: () => {
+					this.status = this.status === 'on' ? 'off' : 'on';
 					if (this.config.setting.requireReload) {
 						requireReload = true;
 					}
@@ -74,7 +72,7 @@ Vue.component('module-switch', {
 });
 
 @Component
-export default class ModuleSetting extends Optionsable {
+export default class ModuleSetting extends Vue {
 	public hasOptionUI(name: string) {
 		return !!this.optionsInterface[name.toLowerCase()];
 	}

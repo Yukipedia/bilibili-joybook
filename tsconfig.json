@@ -15,14 +15,12 @@
 		"noImplicitAny": false,
 		"noImplicitThis": false,
 		"noImplicitReturns": true,
-		"isolatedModules": false,
+		"strictNullChecks": true,
+		"isolatedModules": true,
 		"sourceMap": true,
+		"pretty": true,
 		"baseUrl": "./",
 		"types": ["chrome", "webpack-env", "jest"],
-		"typeRoots": [
-			"./src/typings/",
-			"./node_modules/@types/"
-		],
 		"paths": {
 			"@/*": ["src/*"]
 		},

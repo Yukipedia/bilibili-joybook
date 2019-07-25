@@ -22,22 +22,19 @@
 	],
 	"web_accessible_resources": [
 		"js/inject.js",
+		"js/microhost.js",
+		"js/chunk-vendors.js",
 		"img/twotone-settings-24px.svg"
 	],
 	"background": {
-		"scripts": ["background.js"],
+		"page": "background.html",
 		"persistent": true
 	},
+	"key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAhYZEg/d2A/wQc+KJVALO36f+1wDX1qoO1L7VKSNkHwK5GcFII4L46Jz4+A/3kct/KJcImh+U7CVRJ3SS9GOPfYcb1bRxqjcxtHte5k876sJle1Kti2K4U4K18pYS9Qnelk+LA0TkCreOB4/k1SVbGL1BIMXNnkMUlfEzbbvWVdeMXOyjxDRWhU9fUYNKdAm4pSZ7m34i2/WmPm3TmPWFUy5TzAEkB4hjoZwu+0EOglju4cP0plc1v05mwiEO6OA5wnbFNKFF5yta9McfwQrDCm301EK96Wkz3ozKE4M3CBQYGSAcesB+iySIvVK7ckSj8I24Elz41egX9n09uUjb3wIDAQAB",
 	"content_scripts": [
 		{
-			"js": ["js/contentscript.js"],
-			"all_frames": false,
-			"matches": ["*://www.bilibili.com/*"],
-			"run_at": "document_start"
-		},
-		{
 			"js": ["js/injection.js"],
-			"all_frames": false,
+			"all_frames": true,
 			"matches": ["*://www.bilibili.com/*", "*://space.bilibili.com/*"],
 			"run_at": "document_start"
 		},
@@ -56,5 +53,5 @@
 		"default_popup": "popup.html",
 		"default_title": "bilibili_joybook"
 	},
-	"content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'"
+	"content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'"
 }

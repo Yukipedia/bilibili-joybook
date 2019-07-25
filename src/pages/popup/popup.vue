@@ -20,14 +20,14 @@ export default class Popup extends Vue {
 </script>
 
 <style lang='scss'>
-:root {
-	--font-family-sans-serif: -apple-system, BlinkMacSystemFont, 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif, "Microsoft Yahei";
-	--font-family-monospace: Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-}
+// :root {
+// 	--font-family-sans-serif: -apple-system, BlinkMacSystemFont, 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', Arial, sans-serif, "Microsoft Yahei";
+// 	--font-family-monospace: Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+// }
 
 html,
 body {
-	height: 100%;
+	max-height: max-content;
 	width: 100%;
 	min-width: 180px;
 	margin: 0;

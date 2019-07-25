@@ -1,4 +1,4 @@
-import InjectModule, { InjectModuleConstructor } from '@/lib/InjectModule';
+import InjectModule, { IInjectModuleConstructor } from '@/lib/InjectModule';
 import RegExpPattern from '@/utils/RegExpPattern';
 
 export const config = {
@@ -8,12 +8,13 @@ export const config = {
 	},
 	run_at: RegExpPattern.videoUrlPattern,
 	storageOptions: {
+		statusArea: 'sync',
 		status: 'on',
 	},
 	setting: {
 		title: '自动跳转至上次观看时间',
 	},
-} as InjectModuleConstructor;
+} as IInjectModuleConstructor;
 
 export default class AlwaysJumpTo extends InjectModule {
 	public accountShareStatus: boolean | undefined;

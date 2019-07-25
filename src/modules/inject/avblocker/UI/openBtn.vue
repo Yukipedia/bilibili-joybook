@@ -1,29 +1,29 @@
 <template>
 <button @click.prevent="openSetting" class="joybook-filter-setting">
 	过滤
-	<img :src="`chrome-extension://${extensionId}${settingsIcon}`">
+	<img :src="`chrome-extension://${EXTENSION_ID}${settingsIcon}`">
 </button>
 </template>
 
 <script lang='ts'>
 import { Component, Prop, Vue } from 'vue-property-decorator';
-import { waitUntilDomLoaded } from '../../../../utils/helper';
+import { EXTENSION_ID } from '@/lib/extension';
+import { waitUntilDomLoaded } from '@/utils/helper';
 @Component
 export default class OpenSettingBtn extends Vue {
 	public name: string = 'OpenSettingBtn';
-	public extensionId: string = window.joybook.id;
 	public settingsIcon: string = require('@/assets/img/svg/twotone-settings-24px.svg');
 
 	@Prop({ type: String, default: '' }) public section!: string;
 
 	public openSetting() {
 		chrome.runtime.sendMessage(
-			window.joybook.id,
+			EXTENSION_ID,
 			{
 				name: 'serve',
 				cmd: 'create:tabs',
 				payload: [{
-					url: `chrome-extension://${this.extensionId}/options.html#/redirect?to=avblocker?section=${this.section}`,
+					url: `chrome-extension://${EXTENSION_ID}/options.html#/redirect?to=avblocker?section=${this.section}`,
 				}],
 			},
 			() => {},

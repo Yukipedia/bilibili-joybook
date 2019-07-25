@@ -1,34 +1,32 @@
-import Module, { envContext, ModuleConstructor } from '@/lib/Module';
+import InjectModule, { IInjectModuleConstructor } from '@/lib/InjectModule';
 import RegExpPattern from '@/utils/RegExpPattern';
 
 export const config = {
 	name: 'SkipSponsor',
-	context: envContext.inject,
-	priority: 1,
 	run_at: RegExpPattern.bangumiUrlPattern,
+	listener: {
+		xhrrequest: 'detectSponsprRequest',
+	},
 	storageOptions: {
-		area: 'local',
-		switch: 'switch.skipsponsor',
-		defaultSwitch: true,
+		statusArea: 'local',
+		status: 'on',
 	},
 	setting: {
 		title: '跳过承包小伙伴',
-		desc: '',
 	},
-} as ModuleConstructor;
+} as IInjectModuleConstructor;
 
-export default class SkipSponsor extends Module {
+export default class SkipSponsor extends InjectModule {
 	constructor() {
 		super(config);
 	}
 
-	public launch(moduleNsp) {
-		moduleNsp.MXHRR.addXHRJob((responseText: string, requestData: string, requestURL: string, requestMethod: string) => {
-			if (RegExpPattern.sponsor.test(requestURL)) {
-				this.monitor(JSON.parse(responseText));
-			}
-			return;
-		});
+	public detectSponsprRequest(payload: joybook.InjectHost.XHREvent) {
+		if (RegExpPattern.sponsor.test(payload.requestURL)) {
+			this.monitor(JSON.parse(payload.response));
+			this.listener.xhrrequest = undefined;
+		}
+		return;
 	}
 
 	public monitor(response: bili.BangumiSponsor) {
@@ -41,10 +39,10 @@ export default class SkipSponsor extends Module {
 
 			// 因为sponsor列表只获取一次 如果连续看的话clearInterval就会导致此功能失效
 			// 如果已经跳转了则忽略
-			if (Math.floor(duration) === Math.floor(curTime)) return;
+			if (curTime === duration) return;
 
-			if (Math.floor(duration - curTime) <= sponsorHoldTime) {
-				setTimeout(() => { player.seek(duration); }, 1e3);
+			if (duration - curTime <= sponsorHoldTime) {
+				player.seek(duration);
 			}
 		}, 1e3);
 	}

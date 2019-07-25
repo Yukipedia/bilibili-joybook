@@ -1,120 +1,106 @@
-import Module, { envContext, ModuleConstructor } from '@/lib/Module';
-import ChromeAsyncStorage from '@/utils/chrome/storage';
-import {
-	parseCookie, serializeCookie,
-} from '@/utils/helper';
+import BackgroundModule from '@/lib/BackgroundModule';
+import { parseCookie, serializeCookie } from '@/utils/helper';
 import RegExpPattern from '@/utils/RegExpPattern';
+import config, { Direct } from './config';
 
-const enum Direct {
-	/* 账号导航栏 */
-	watchHistory =             'x/v2/history',                                   // 观看历史
-	newestFavList =            'x/v2/fav/video/newest',                          // 收藏夹
-	stardustNewestFavList =          'medialist/gateway/coll/resource/recent',         // [星尘]收藏夹
-	dynamicNew =               'dynamic_svr/v1/dynamic_svr/dynamic_new',         // 动态
-	dynamicHistory =           'dynamic_svr/v1/dynamic_svr/dynamic_history',     // 动态 (往下翻页时)
-	dynamicNum =               'dynamic_svr/v1/dynamic_svr/dynamic_num',         // 动态更新 提示你有多少个新动态
-	historyToView =            'x/v2/history/toview/web',                        // 稍后再看
-	messages =                 'web_im/v1/web_im/unread_msgs',                   // 消息
-	messagesNotify =           'api/notify/query\\.notify\\.count\\.do',         // 应该是提醒你有没有人@你或者回复你的
-	/* 弹幕 */
-	danmakuPost =              'x/v2/dm/post',                                   // 发射弹幕
-	danmakuReport =            'x/dm/report/add',                                // 举报弹幕
-	danmakuRecall =            'x/dm/recall',                                    // 撤回弹幕
-	/* 评论 */
-	commentAdd =               'x/v2/reply/add',                                 // 添加评论
-	commentDel =               'x/v2/reply/del',                                 // 删除评论
-	commentAction =            'x/v2/reply/action',                              // 👍
-	commentHate =              'x/v2/reply/hate',                                // 👎
-	commentReport =            'x/v2/reply/report',                              // 举报评论
-	/* 操作 */
-	relationStatus =           'x/relation',                                     // 关注的状态
-	relationTag =              'x/relation/tags',                                // 关注分组
-	relationModify =           'x/relation/modify',                              // 关注/黑名单
-	subscriptPrompt =          'x/relation/prompt',                              // 收藏视频后提示是否关注
-	liked =                    'x/web-interface/archive/has/like',               // 是否已经点赞了
-	favoured =                 'x/v2/fav/video/favoured',                        // 是否已经收藏了
-	favoriteFolder =           'x/v2/fav/folder',                                // 收藏夹列表
-	favoriteAdd =              'x/v2/fav/video/add',                             // 添加收藏
-	favoriteDel =              'x/v2/fav/video/del',                             // 删除收藏
-	stardustFavorite =         'medialist/gateway/base/created',                 // [星尘]收藏
-	stardustFavoriteDeal =     'medialist/gateway/coll/resource/deal',           // [星尘]添加到/删除收藏
-	filter =                   'dm/filter/user',                                 // 同步/删除/添加屏蔽列表(包括屏蔽用户)
-	threwCoin =                'x/web-interface/archive/coins',                  // 是否已经投过币
-	throwCoin =                'x/web-interface/coin/add',                       // 投币
-	tagging =                  'x/tag/archive/add',                              // 添加tag
-	followBangumi =            'follow/web_api/season/follow',                   // 追番
-	unfollowBangumi =          'follow/web_api/season/unfollow',                 // 取消追番
-	triple =                   'x/web-interface/archive/like/triple',            // 三连
-	shortReview =              'review/web_api/short/post',                      // 番剧短评
-	videoLike =                'x/web-interface/archive/like',                   // 视频 👍/👎
-	/* 其他 */
-	heartbeat =                'x/report/web/heartbeat',                         // 记录播放时间之类的
-	webshow =                  'x/web-show/res/locs',                            // 貌似是头部大图资讯
-	fees =                     'cm/api/fees/pc',                                 // 不清楚
-	feed =                     'ajax/feed/count',                                // 不清楚
-	joybook =                  '[&?]?joybook=true',                              // joybook
-	exp =                      'plus/account/exp.php',                           // 投币时的经验值
-	charge =                   'x/web-interface/elec/show',                      // 充电鸣谢
-	bangumiLastWatch =         'view/web_api/season/user/status',                // bangumi 最后观看时间
-	stardustBangumiLastWatch = 'pgc/view/web/season/user/status',                // [星尘]bangumi 最后观看时间
-	bangumiReview =            'review/web_api/user/open',                       // 番剧评测
-	space =                    'space\\.bilibili\\.com',                         // 用户空间
-}
-
-export const config: ModuleConstructor = {
-	name: 'AccountShare',
-	context: envContext.background,
-	priority: 1,
-	storageOptions: {
-		area: 'local',
-		location: 'module.accountshare',
-		switch: 'switch.accountshare',
-		defaultSwitch: false,
-	},
-	setting: {
-		title: '白嫖大会员',
-		desc: '开启后，点击joybook扩展图标进行设置。',
-		requireReload: true,
-	},
-};
-
-export default class AccountShare extends Module {
-	public storage: ChromeAsyncStorage;
+export default class AccountShare extends BackgroundModule {
+	private syncPage: HTMLIFrameElement;
+	private syncPort: chrome.runtime.Port = null as any;
+	private syncResponseCollect: Record<string, string> = {};
 
 	constructor() {
-		super(config);
-		this.storage = new ChromeAsyncStorage();
+		super(config as typeof config);
+
+		const page = document.createElement('iframe');
+		// page.sandbox.add('allow-scripts', 'allow-same-origin', 'allow-forms');
+		page.referrerPolicy = 'no-referrer';
+		document.body.appendChild(page);
+		this.syncPage = page;
 	}
 
 	public launch() {
-		this.storage.once('ready', () => {
-			this.main();
-			this.launchComplete();
+		this.addEventListener('remoteMessage', this.syncOpenPage);
+		this.addEventListener('remoteConnect', ({ port }) => {
+			if (port.name === 'sync:connect') {
+				console.log(port);
+				this.syncPort = port;
+				this.syncPort.onMessage.addListener(message => {
+					this.syncResponseCollect[message.payload.url] = message.payload.responseText;
+				});
+			}
 		});
-		this.storage.init();
+		// this.main();
+		return Promise.resolve();
 	}
 
-	public checkSwitch() {
-		if (config.setting && config.storageOptions.switch && config.storageOptions.defaultSwitch) {
-			return this.storage.get('local', config.storageOptions.switch, config.storageOptions.defaultSwitch);
+	public syncOpenPage = ({ tabId, message }: joybook.BackgroundHost.RemoteMessage) => {
+		if (!/^sync:.+/i.test(message.postName)) return;
+		const action = message.postName.split(':')[1];
+		switch (action) {
+			case 'playurl':
+				chrome.tabs.get(tabId, tab => {
+					this.syncPage.src = tab.url!;
+				});
+				break;
+			case 'heartbeat':
+				this.syncPort.postMessage({
+					postName: 'sync:heartbeat',
+					payload: message.payload,
+				});
+			default: break;
 		}
-		return false;
 	}
 
-	public get storearea() {
-		return this.storageOptions.area;
-	}
+	public modifyHeaderCookie(requestHeaders: chrome.webRequest.HttpHeader[], cookies: chrome.cookies.Cookie[]) {
+		const originCookies = requestHeaders.find(header => header.name === 'Cookie');
+		let serializeCookies = '';
+		cookies.forEach(cookie => {
+			if (/(dedeuser.+)|(sessdata)|(bili_jct)|(sid)|(buvid3)|(live_buvid)/i.test(cookie.name)) {
+				serializeCookies += `${serializeCookie(cookie.name, cookie.value)}; `;
+			}
+		});
 
-	public get storelocation() {
-		return this.storageOptions.location;
+		if (originCookies) {
+			const parsedCookies = parseCookie<any>(originCookies.value!);
+			parsedCookies.stardustvideo && (serializeCookies += `${serializeCookie('stardustvideo', parsedCookies.stardustvideo)}; `);
+			parsedCookies.stardustpgcv && (serializeCookies += `${serializeCookie('stardustpgcv', parsedCookies.stardustpgcv)}; `);
+			parsedCookies.CURRENT_FNVAL && (serializeCookies += `${serializeCookie('CURRENT_FNVAL', parsedCookies.CURRENT_FNVAL)}`);
+			parsedCookies.CURRENT_QUALITY && (serializeCookies += `${serializeCookie('CURRENT_QUALITY', parsedCookies.CURRENT_QUALITY)}`);
+		}
+
+		if (requestHeaders.find(header => header.name === 'Cookie')) {
+			const mHeaders = requestHeaders.map(header => {
+				if (header.name === 'Cookie') {
+					// return { name: 'Cookie', value: '' };
+					return {
+						name: 'Cookie',
+						value: serializeCookies,
+					};
+				}
+				return header;
+			});
+			console.log(mHeaders);
+			return mHeaders;
+		} else {
+			requestHeaders.push({
+				name: 'Cookie',
+				value: serializeCookies,
+			});
+			return requestHeaders;
+		}
 	}
 
 	public main() {
-		const { storage, storelocation, storearea } = this;
+		const { storage } = this;
+		const storearea = this.storageOptions.area;
+		const vipCookies = this.storage.get<chrome.cookies.Cookie[]>(this.storageOptions.area, `module.${this.name}.database.account.vip.cookies`);
+		const Cookies = this.storage.get<chrome.cookies.Cookie[]>(this.storageOptions.area, `module.${this.name}.database.account.beneficiary.cookies`);
+
 		chrome.webRequest.onBeforeSendHeaders.addListener(
 			details => {
+				console.log(details);
 				// 白嫖打开但是没有获取账号cookies时
-				if (!storage.get(storearea, `${storelocation}.account`)) return;
+				if (this.disposed || !storage.get(storearea, `module.${this.name}.database.account`)) return;
 				const Referer = (<chrome.webRequest.HttpHeader[]> details.requestHeaders).filter(v => v.name === 'Referer');
 				// 过滤网页地址
 				if (Referer.length > 0 && !RegExpPattern.videoUrlPattern.test(<string> Referer[0].value)) {
@@ -123,30 +109,8 @@ export default class AccountShare extends Module {
 
 				// NOTE: 带有joybook的请求都加入Cookies
 				if (/joybook/ig.test(details.url)) {
-					const Cookies = storage.get<chrome.cookies.Cookie[]>(storearea, `${storelocation}.account.beneficiary.cookies`);
-					let beneficiaryCookies = '';
-					if (Cookies) {
-						Cookies.forEach(cookie => {
-							beneficiaryCookies += `${serializeCookie(cookie.name, cookie.value)}; `;
-						});
-
-						const originCookies = details.requestHeaders!.find(v => v.name === 'Cookie')!;
-						if (originCookies) {
-							const parsedCookies = parseCookie<any>(originCookies.value!);
-							beneficiaryCookies += `${serializeCookie('stardustvideo', parsedCookies.stardustvideo)}; `;
-							beneficiaryCookies += `${serializeCookie('stardustpgcv', parsedCookies.stardustpgcv)}; `;
-							beneficiaryCookies += `${serializeCookie('CURRENT_FNVAL', parsedCookies.CURRENT_FNVAL)}`;
-							beneficiaryCookies += `${serializeCookie('CURRENT_QUALITY', parsedCookies.CURRENT_QUALITY)}`;
-						}
-
-						details.requestHeaders = details.requestHeaders!.filter(v => !/cookie/i.test(v.name));
-
-						details.requestHeaders!.push({
-							name: 'Cookie',
-							value: beneficiaryCookies,
-						});
-						return { requestHeaders: details.requestHeaders };
-					}
+					const requestHeaders = this.modifyHeaderCookie(details.requestHeaders!, Cookies);
+					return { requestHeaders };
 				}
 
 				// 过滤连接
@@ -206,60 +170,13 @@ export default class AccountShare extends Module {
 				) {
 					return;
 				}
-				let modifyHeaders: chrome.webRequest.HttpHeader[] = [];
-				if (details.requestHeaders!.filter(v => /cookie/i.test(v.name)).length > 0) {
-					modifyHeaders = details.requestHeaders!.map(header => {
-						if (header.name === 'Cookie') {
-							const Cookies = storage.get<chrome.cookies.Cookie[]>(storearea, `${storelocation}.account.vip.cookies`);
-							if (Cookies) {
-								let vipCookies = '';
-								Cookies.forEach(cookie => {
-									vipCookies += `${serializeCookie(cookie.name, cookie.value)}; `;
-								});
-
-								const originCookies = details.requestHeaders!.find(v => v.name === 'Cookie')!;
-								if (originCookies) {
-									const parsedCookies = parseCookie<any>(originCookies.value!);
-									vipCookies += `${serializeCookie('stardustvideo', parsedCookies.stardustvideo)}; `;
-									vipCookies += `${serializeCookie('stardustpgcv', parsedCookies.stardustpgcv)}; `;
-									vipCookies += `${serializeCookie('CURRENT_FNVAL', parsedCookies.CURRENT_FNVAL)}`;
-									vipCookies += `${serializeCookie('CURRENT_QUALITY', parsedCookies.CURRENT_QUALITY)}`;
-								}
-								return {
-									name: 'Cookie',
-									value: vipCookies,
-								};
-							}
-						}
-						return header;
-					});
-				} else {
-					const Cookies = storage.get<chrome.cookies.Cookie[]>(storearea, `${storelocation}.account.vip.cookies`);
-					if (Cookies) {
-						let vipCookies = '';
-						Cookies.forEach(cookie => {
-							vipCookies += `${serializeCookie(cookie.name, cookie.value)}; `;
-						});
-
-						const originCookies = details.requestHeaders!.find(v => v.name === 'Cookie')!;
-						if (originCookies) {
-							const parsedCookies = parseCookie<any>(originCookies.value!);
-							vipCookies += `${serializeCookie('stardustvideo', parsedCookies.stardustvideo)}; `;
-							vipCookies += `${serializeCookie('stardustpgcv', parsedCookies.stardustpgcv)}; `;
-							vipCookies += `${serializeCookie('CURRENT_FNVAL', parsedCookies.CURRENT_FNVAL)}`;
-							vipCookies += `${serializeCookie('CURRENT_QUALITY', parsedCookies.CURRENT_QUALITY)}`;
-						}
-
-						modifyHeaders = details.requestHeaders!;
-						modifyHeaders.push({ name: 'Cookie', value: vipCookies });
-					}
-				}
 				return {
-					requestHeaders: modifyHeaders,
+					requestHeaders: this.modifyHeaderCookie(details.requestHeaders!, Cookies),
 				};
 			},
 			{ urls: [
 					'*://*.bilibili.com/*',
+					// '<all_urls>',
 				],
 			},
 			['blocking', 'requestHeaders', 'extraHeaders'],

@@ -1,46 +1,21 @@
-import Module, { envContext } from '@/lib/Module';
+import { EXTENSION_ID } from '@/lib/extension';
 import { getURLParameters } from '@/utils/helper';
 
-const jobs: {
-	ajax: joybook.mxhrr.AjaxJob[],
-	xhr: joybook.mxhrr.XhrJob[],
-} = {
-	ajax: [],
-	xhr: [],
-};
+class MicroHost {
+	private responseCollect: Record<string, any>;
+	private remotePort: chrome.runtime.Port;
 
-export default class MXHRR extends Module {
 	constructor() {
-		super({
-			name: 'MXHRR',
-			context: envContext.inject,
-			priority: 9,
-		});
+		this._injectXHR();
+		this._injectAjax();
+		this.remotePort = this._connectRemote();
+		this.responseCollect = {};
 	}
 
-	public launch() {
-		Promise.prototype.compose = function(transformer) {
-			return transformer ? transformer(this) : this;
-		};
-		this.injectXHR();
-		this.injectAjax();
-		this.launchComplete();
-		return {
-			addXHRJob: (job: joybook.mxhrr.XhrJob) => {
-				jobs.xhr.push(job);
-			},
-			addAjaxJob: (job: joybook.mxhrr.AjaxJob) => {
-				jobs.ajax.push(job);
-			},
-		};
-	}
+	private _injectXHR() {
+		const _this = this;
 
-	/**
-	 * https://github.com/ipcjs/bilibili-helper/blob/user.js/bilibili_bangumi_area_limit_hack.user.js#L967
-	 */
-	public injectXHR() {
 		// tslint:disable object-literal-shorthand only-arrow-functions
-		// @ts-ignore
 		window.XMLHttpRequest = new Proxy(window.XMLHttpRequest, {
 			construct(target, args) {
 
@@ -54,17 +29,23 @@ export default class MXHRR extends Module {
 							container.__onreadystatechange = value;
 							const cb = value;
 							value = function() {
+								// if (target.responseURL.includes('x/player.so?id=cid')) {
+								// 	// let json = JSON.parse(target.responseText);
+								// 	console.log(target.responseText);
+								// }
 								(async function() {
-									// responseType如果不是空的或者不是text则不执行
+									// responseType如果不是空的或者不是text则不执行;
 									if (target.readyState === 4 && /^$|text/i.test(target.responseType)) {
-										for (const job of jobs.xhr) {
-											if (typeof job === 'function') {
-												const result = await job(target.responseText, container.requestData, target.responseURL, container.requestMethod);
-												if (result) container.responseText = result;
-											}
-										}
+										_this.remotePort.postMessage({
+											postName: 'sync:responseText',
+											payload: {
+												url: container.requestURL.split('?')[0],
+												responseText: target.responseText,
+											},
+										});
+										_this.responseCollect[container.requestURL.split('?')[0]] = target.responseText;
 									}
-									cb.apply(container.responseText ? receiver : this, arguments);
+									return cb.apply(container.responseText ? receiver : this, arguments);
 								})();
 							};
 						}
@@ -96,7 +77,11 @@ export default class MXHRR extends Module {
 		});
 	}
 
-	public injectAjax() {
+	private _injectAjax() {
+		Promise.prototype.compose = function(transformer) {
+			return transformer ? transformer(this) : this;
+		};
+		const _this = this;
 		function doInject() {
 			// @ts-ignore
 			const originalAjax = $.ajax;
@@ -120,12 +105,7 @@ export default class MXHRR extends Module {
 					.then((r: any) => oriSuccess(r))
 					.catch((e: any) => oriError(e));
 
-				for (const job of jobs.ajax) {
-					if (typeof job === 'function') {
-						const result = job(param, oriResultTransformer);
-						if (result) oriResultTransformer = result;
-					}
-				}
+
 
 				if (oriResultTransformer) {
 					new Promise((resolve, reject) => {
@@ -184,4 +164,34 @@ export default class MXHRR extends Module {
 			doInject();
 		}
 	}
+	private _connectRemote() {
+		const port = chrome.runtime.connect(EXTENSION_ID, {
+			name: 'sync:connect',
+		});
+
+		// port.onMessage.addListener(message => {
+		// 	// 当会员用户 heartbeat 发送时 正常用户也同步heartbeat？
+		// 	if (message.postName === 'sync:heartbeat') {
+		// 		let data = '';
+		// 		for (let [dataKey, dataValue] of Object.entries(message.payload[0])) {
+		// 			if (dataKey === 'csrf') {
+		// 				dataValue = parseCookie<{ bili_jct: string }>(document.cookie).bili_jct;
+		// 			}
+		// 			data += `${dataKey}=${dataValue}&`;
+		// 		}
+		// 		data.substring(0, data.length - 1);
+
+		// 		// @ts-ignore
+		// 		$.ajax({
+		// 			type: 'POST',
+		// 			url: 'https://api.bilibili.com/x/report/web/heartbeat',
+		// 			data: data,
+		// 		});
+		// 	}
+		// });
+
+		return port;
+	}
 }
+
+new MicroHost();

@@ -1,4 +1,4 @@
-import { config as AccountShareConfig } from './background/accountShare';
+import AccountShareConfig from './background/accountShare/config';
 import { config as AlwaysJumpToConfig } from './inject/alwaysJumpTo';
 import AVBlockerConfig from './inject/avblocker/config';
 import { config as DisableDanmakuMaskConfig } from './inject/disableDanmakuMask';

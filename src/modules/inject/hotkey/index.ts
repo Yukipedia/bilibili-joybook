@@ -15,7 +15,7 @@ export default class Hotkey extends Module {
 		});
 	}
 
-	public launch(moduleNsp) {
+	public launch(moduleNsp: any) {
 		function rememberLastPlaytime(cid?: number, playtime?: number) {
 			let items = localStorage.getItem('joybook_hotkey') || {};
 			if (typeof items === 'string') items = JSON.parse(items);

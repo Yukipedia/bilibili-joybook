@@ -43,7 +43,6 @@
 </template>
 
 <script lang='ts'>
-import Optionsable from '@/components/mixins/Optionsable';
 import Storageable from '@/components/mixins/Storageable';
 import settingsToggleButton from '@/components/settingsToggleButton.vue';
 import { Component, Mixins, Vue } from 'vue-property-decorator';

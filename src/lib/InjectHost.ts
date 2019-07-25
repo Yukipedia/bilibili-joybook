@@ -1,67 +1,96 @@
-import InjectModule from './InjectModule';
+import { Direct } from '@/modules/background/accountShare/config';
 import { getURLParameters } from '@/utils/helper';
+import { EXTENSION_ID } from './extension';
+import InjectModule from './InjectModule';
 
 /* tslint:disable variable-name */
 export const enum HostEvent {
 	// tslint:disable typedef-whitespace
 	DomContentLoaded = 'domcontentloaded',
-	AjaxRequest      = 'ajaxrequest',
-	XHRRequest       = 'xhrrequest',
-	Mutation         = 'mutation',
-	PlayerBuffering  = 'playerbuffering',
-	PlayerReady      = 'playerready',
-	PlayerPlaying    = 'playerplaying',
-	PlayerPaused     = 'playerpaused',
-	PlayerIdel       = 'playeridel',
-	PlayerComplete   = 'playercomplete',
+	AjaxRequest = 'ajaxrequest',
+	XHRRequest = 'xhrrequest',
+	Mutation = 'mutation',
+	PlayerBuffering = 'playerbuffering',
+	PlayerReady = 'playerready',
+	PlayerPlaying = 'playerplaying',
+	PlayerPaused = 'playerpaused',
+	PlayerIdel = 'playeridel',
+	PlayerComplete = 'playercomplete',
 	// tslint:enable typedef-whitespace
 }
-
-// tslint:disable class-name
-export interface _HostEvent {
-	'domcontentloaded': jblib.DomContentLoaded;
-	'ajaxrequest': jblib.XHREvent;
-	'xhrrequest': jblib.AjaxEvent;
-	'mutation': jblib.MutationEvent;
-}
-// tslint:enable class-name
 
 export default class InjectHost {
 	// Inject环境的模组
 	public injectInstances: InjectModule[] = [];
 	public suspendInstances: InjectModule[] = [];
 	public mutationObserver: MutationObserver;
+	public remotePort: chrome.runtime.Port;
+	public backgroundModules: string[] = [];
 
-	constructor(modules: Record<string, InjectModule>) {
+	constructor(modules: Record<string, typeof InjectModule>) {
+		this.remotePort = chrome.runtime.connect(EXTENSION_ID);
+		this.registerPortEvent();
 		this.registerModules(modules);
-		this.mutationObserver = new MutationObserver(this.handleMutation.bind(this));
+		this.mutationObserver = new MutationObserver(this.handleMutation);
 		this.injectHost();
 	}
 
-	public registerModules(modules) {
+	private registerModules(modules: any) {
 		const href = window.location.href;
 
 		for (const key in modules) {
-			const instance = new modules[key]();
-			if (Array.isArray(instance.dependencies) && instance.dependencies.length) {
-				this.suspendInstances.push(instance);
-				continue;
-			}
+			const instance: InjectModule = new modules[key](this.remotePort);
 			if (Array.isArray(instance.run_at)) {
-				instance.run_at.find(ex => ex.test(href)) && this.injectInstances.push(instance);
-			} else {
-				instance.run_at.test(href) && this.injectInstances.push(instance);
+				if (!(instance.run_at.findIndex((ex: RegExp) => ex.test(href)) > -1)) continue;
+				if (Array.isArray(instance.dependencies) && instance.dependencies.length) this.suspendInstances.push(instance);
+				else this.injectInstances.push(instance);
+			} else if (instance.run_at.test(href)) {
+				if (Array.isArray(instance.dependencies) && instance.dependencies.length) this.suspendInstances.push(instance);
+				else this.injectInstances.push(instance);
 			}
 		}
+		this.checkDependencies();
+	}
+	// TODO: 要有个专门存储历史事件的东西
+	// 假如后台某个模组开的很慢，
+	// 但是inject模组依赖此后台模组，
+	// 那么在后台模组开启之前的事件，inject模组就不会接收到，这会导致inject模组不会执行。
+	// NOTE: 测试看来 port 的互相传输消息是非常快的 估计就十几毫秒
+	private async checkDependencies(modules?: string[]) {
+		const messageHandler = (message: any) => {
+			if (message.postName !== 'return:launchedModules') return;
+			const backgroundModules: string[] = message.payload;
+			for (const [index, instance] of this.suspendInstances.entries()) {
+				const dependencies = instance.dependencies!;
+				backgroundModules.forEach(moduleName => {
+					const index = dependencies.findIndex(dependence => dependence === moduleName);
+					index !== -1 && dependencies.splice(index, 1);
+				});
+
+				// 只有在dependencies长度为0时才允许运行
+				if (dependencies.length === 0) {
+					delete this.suspendInstances[index];
+					this.injectInstances.push(instance);
+				}
+			}
+		};
+		if (modules) return messageHandler({ postName: 'return:launchedModules', payload: modules });
+		this.remotePort.onMessage.addListener(messageHandler);
+		this.remotePort.postMessage({ postName: 'get:launchedModules' });
 	}
 
-	private handleMessage() {
+	private registerPortEvent() {
+		this.remotePort.onMessage.addListener(message => {
+			if (message.postName === 'moduleLaunched') {
+				this.checkDependencies(message.payload);
+			}
+		});
 	}
 
 	private injectXHR() {
 		const _this = this;
+
 		// tslint:disable object-literal-shorthand only-arrow-functions
-		// @ts-ignore
 		window.XMLHttpRequest = new Proxy(window.XMLHttpRequest, {
 			construct(target, args) {
 
@@ -74,14 +103,18 @@ export default class InjectHost {
 						if (prop === 'onreadystatechange') {
 							container.__onreadystatechange = value;
 							const cb = value;
-							value = function(event) {
+							value = function() {
+								// if (target.responseURL.includes('x/player.so?id=cid')) {
+								// 	// let json = JSON.parse(target.responseText);
+								// 	console.log(target.responseText);
+								// }
 								(async function() {
-									// responseType如果不是空的或者不是text则不执行
+									// responseType如果不是空的或者不是text则不执行;
 									if (target.readyState === 4 && /^$|text/i.test(target.responseType)) {
 										for (const instance of _this.injectInstances) {
 											try {
 												instance.broadcast('xhrrequest', {
-													requestURL: target.responseURL,
+													requestURL: container.requestURL,
 													requestData: container.requestData,
 													requestMethod: container.requestMethod,
 													response: target.responseText,
@@ -89,21 +122,24 @@ export default class InjectHost {
 
 												if (typeof instance.listener.xhrrequest === 'function') {
 													const result = await instance.listener['xhrrequest'].apply(instance, [{
-														requestURL: target.responseURL,
+														requestURL: container.requestURL,
 														requestData: container.requestData,
 														requestMethod: container.requestMethod,
 														response: target.responseText,
 													}]);
 													if (result) container.responseText = result;
 												} else if (typeof instance.listener.xhrrequest === 'string') {
+													// await new Promise(resolve => null);
+													// @ts-ignore instance 没有索引
 													const result = await instance[instance.listener.xhrrequest].apply(instance, [
 														{
-															requestURL: target.responseURL,
+															requestURL: container.requestURL,
 															requestData: container.requestData,
 															requestMethod: container.requestMethod,
 															response: target.responseText,
 														},
 													]);
+													console.log(instance.name, result);
 													if (result) container.responseText = result;
 												}
 											} catch (e) {
@@ -112,18 +148,18 @@ export default class InjectHost {
 											}
 										}
 									}
-									cb.apply(container.responseText ? receiver : this, arguments);
+									return cb.apply(container.responseText ? receiver : this, arguments);
 								})();
 							};
 						}
-						target[prop] = value;
+						(<any> target)[prop] = value;
 						return true;
 					},
 					get: function(target: XMLHttpRequest, prop, receiver) {
+						// console.log(target[prop]);
 						// @ts-ignore
 						if (prop in container) return container[prop];
-						let value = target[prop];
-
+						let value = (<any> target)[prop];
 						if (typeof value === 'function') {
 							const func = value;
 							value = function() {
@@ -131,9 +167,17 @@ export default class InjectHost {
 									container.requestData = getURLParameters(arguments[1]);
 									container.requestMethod = arguments[0];
 									container.requestURL = arguments[1];
+									if (
+										new RegExp(Direct.heartbeat, 'ig').test(arguments[1]) ||
+										new RegExp(Direct.playerso, 'ig').test(arguments[1])
+									) {
+										arguments[0] = 'GET';
+										arguments[1] = 'https://moeocean.com';
+									}
 								} else if (prop === 'send') {
 									arguments[0] && (container.requestData = getURLParameters(arguments[0]));
 								}
+
 								return func.apply(target, arguments);
 							};
 						}
@@ -145,6 +189,9 @@ export default class InjectHost {
 	}
 
 	private injectAjax() {
+		Promise.prototype.compose = function(transformer) {
+			return transformer ? transformer(this) : this;
+		};
 		const _this = this;
 		function doInject() {
 			// @ts-ignore
@@ -165,31 +212,32 @@ export default class InjectHost {
 				let myError;
 				let oriResultTransformer;
 				// 投递结果的transformer, 结果通过oriSuccess/Error投递
-				const dispatchResultTransformer = p => p
-					.then(r => oriSuccess(r))
-					.catch(e => oriError(e));
+				const dispatchResultTransformer = (p: any) => p
+					.then((r: any) => oriSuccess(r))
+					.catch((e: any) => oriError(e));
 
 				for (const instance of _this.injectInstances) {
 					try {
 						instance.broadcast('ajaxrequest', {
 							response: param,
-							requestURL: param,
-							requestData: param,
+							requestURL: param.url,
+							requestData: param.data,
 							requestMethod: param,
 						});
 						if (typeof instance.listener.ajaxrequest === 'function') {
 							const result = instance.listener.ajaxrequest.apply(instance, [{
 								response: param,
-								requestURL: param,
-								requestData: param,
+								requestURL: param.url,
+								requestData: param.data,
 								requestMethod: param,
 							}]);
 							if (result) oriResultTransformer = result;
 						} else if (typeof instance.listener.ajaxrequest === 'string') {
+							// @ts-ignore
 							const result = instance[instance.listener.ajaxrequest].apply(instance, [{
 								response: param,
-								requestURL: param,
-								requestData: param,
+								requestURL: param.url,
+								requestData: param.data,
 								requestMethod: param,
 							}]);
 							if (result) oriResultTransformer = result;
@@ -223,7 +271,7 @@ export default class InjectHost {
 				// 若外部使用xhr.done()处理结果, 则替换xhr.done()
 				if (!oriSuccess && mySuccess) {
 					xhr.done(mySuccess);
-					xhr.done = function(success) {
+					xhr.done = function(success: any) {
 						oriSuccess = success; // 保存外部设置的success函数
 						return xhr;
 					};
@@ -231,7 +279,7 @@ export default class InjectHost {
 				// 处理替换error
 				if (!oriError && myError) {
 					xhr.fail(myError);
-					xhr.fail = function(error) {
+					xhr.fail = function(error: any) {
 						oriError = error;
 						return xhr;
 					};
@@ -241,7 +289,7 @@ export default class InjectHost {
 		}
 
 		if (!window.jQuery) {
-			let jQuery;
+			let jQuery: any;
 			Object.defineProperty(window, 'jQuery', {
 				configurable: true,
 				enumerable: true,
@@ -255,12 +303,6 @@ export default class InjectHost {
 			});
 		} else {
 			doInject();
-		}
-	}
-
-	private handleMutation(mutationList: MutationRecord[]) {
-		for (const mutation of mutationList) {
-			this.broadcast(this.injectInstances, HostEvent.Mutation, mutation);
 		}
 	}
 
@@ -281,7 +323,13 @@ export default class InjectHost {
 		});
 	}
 
-	private broadcast(instances: InjectModule[], eventType: keyof _HostEvent, payload?: any) {
+	private handleMutation = (mutationList: MutationRecord[]) => {
+		for (const mutation of mutationList) {
+			this.broadcast(this.injectInstances, HostEvent.Mutation, mutation);
+		}
+	}
+
+	private broadcast(instances: InjectModule[], eventType: keyof joybook.InjectHost.HostEvent, payload?: any) {
 		for (const instance of instances) {
 			try {
 				if (instance._listener[eventType].length) instance.broadcast(eventType, payload);
@@ -311,9 +359,11 @@ export default class InjectHost {
 		function error(...msg: any): void {
 			return ori_consoleLog.call(this, '%cJoyBook:', `background: #D81B60; color: #F8BBD0;`, ...msg);
 		}
-		joybook.log = log;
-		joybook.warn = warn;
-		joybook.error = error;
+		window.joybook = {
+			log: log,
+			warn: warn,
+			error: error,
+		};
 	}
 
 	private injectHost() {

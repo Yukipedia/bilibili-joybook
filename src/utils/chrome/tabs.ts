@@ -1,4 +1,10 @@
 export default class ChromeAsyncTabs {
+	public get(tabId: number): Promise<chrome.tabs.Tab | undefined> {
+		return new Promise(resolve => {
+			chrome.tabs.get(tabId, tab => resolve(tab));
+		});
+	}
+
 	public getCurrent(): Promise<chrome.tabs.Tab | undefined> {
 		return new Promise(resolve => {
 			chrome.tabs.getCurrent(tab => {

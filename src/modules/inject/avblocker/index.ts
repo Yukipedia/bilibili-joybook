@@ -1,4 +1,5 @@
 import Module from '@/lib/Module';
+import { EXTENSION_ID } from '@/lib/extension';
 import { waitUntilDomLoaded } from '@/utils/helper';
 import RegExpPattern from '@/utils/RegExpPattern';
 import config, { RID } from './config';
@@ -107,7 +108,7 @@ export default class AVBlocker extends Module {
 			}
 
 			if (this.blocklist) return returnBlocklist(this.blocklist);
-			chrome.runtime.sendMessage(window.joybook.id, {
+			chrome.runtime.sendMessage(EXTENSION_ID, {
 				name: 'serve',
 				cmd: 'get:storage',
 				payload: [this.storageOptions.area, this.storageOptions.location],
@@ -337,7 +338,7 @@ export default class AVBlocker extends Module {
 										if (retryCount > 0) return resolve(filted.concat(archives));
 
 										chrome.runtime.sendMessage(
-											window.joybook.id,
+											EXTENSION_ID,
 											{
 												name: 'serve:getRankingRegionData',
 												options: {

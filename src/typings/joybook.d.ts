@@ -123,3 +123,41 @@ declare namespace joybook.mxhrr {
 	export type AjaxJob = (param: any, oriResultTransformer: any) => any;
 	export type XhrJob = (modified_response: string, requestData: string, requestURL: string, requestMethod: string) => any;
 }
+
+declare namespace joybook.InjectHost {
+	interface XHREvent {
+		requestURL: string;
+		requestData: Record<string, string>;
+		requestMethod: string;
+		response: any;
+	}
+
+	interface AjaxEvent extends XHREvent {}
+
+	export interface HostEvent {
+		'domcontentloaded': undefined;
+		'ajaxrequest': AjaxEvent;
+		'xhrrequest': XHREvent;
+		'mutation': MutationRecord;
+	}
+}
+
+declare namespace joybook.BackgroundHost {
+	interface RemoteConnect {
+		port: chrome.runtime.Port;
+		tabId: number;
+	}
+
+	interface RemoteDisconnect extends RemoteConnect {}
+	interface RemoteMessage extends RemoteConnect {
+		message: {
+			postName: string;
+			payload: any[];
+		};
+	}
+	export interface HostEvent {
+		'remoteConnect': RemoteConnect;
+		'remoteDisconnect': RemoteDisconnect;
+		'remoteMessage': RemoteMessage;
+	}
+}

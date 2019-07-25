@@ -1,4 +1,5 @@
 import ChromeAsyncStorage from '@/utils/chrome/storage';
+import { EXTENSION_ID } from '@/lib/extension';
 import EventEmiiter from 'eventemitter3';
 import Module, { envContext } from './Module';
 
@@ -80,7 +81,7 @@ export default class ModuleManager extends EventEmiiter {
 					continue;
 				}
 				chrome.runtime.sendMessage(
-					window.joybook.id,
+					EXTENSION_ID,
 					{
 						name: 'serve',
 						cmd: 'get:storage',
@@ -92,7 +93,7 @@ export default class ModuleManager extends EventEmiiter {
 						} else if (response === null) {
 							// 初始化开关状态
 							chrome.runtime.sendMessage(
-								window.joybook.id,
+								EXTENSION_ID,
 								{
 									name: 'serve',
 									cmd: 'set:storage',
@@ -153,7 +154,7 @@ export default class ModuleManager extends EventEmiiter {
 			} else launch();
 		} else if (storageOptions.location && !this.storage) {
 			chrome.runtime.sendMessage(
-				window.joybook.id,
+				EXTENSION_ID,
 				{
 					name: 'serve',
 					cmd: 'get:storage',
@@ -162,7 +163,7 @@ export default class ModuleManager extends EventEmiiter {
 				response => {
 					if (response) return launch();
 					chrome.runtime.sendMessage(
-						window.joybook.id,
+						EXTENSION_ID,
 						{
 							name: 'serve',
 							cmd: 'set:storage',
@@ -178,7 +179,7 @@ export default class ModuleManager extends EventEmiiter {
 	public async crossCheck({name, dependencies}) {
 		console.log('crosscheck', dependencies);
 		chrome.runtime.sendMessage(
-			this.env === envContext.inject ? window.joybook.id : chrome.runtime.id,
+			this.env === envContext.inject ? EXTENSION_ID : chrome.runtime.id,
 			{
 				event: MessageEvent.ObserverModuleLaunchStatus,
 				dependencies,
@@ -207,7 +208,7 @@ export default class ModuleManager extends EventEmiiter {
 			}
 			if (resolveDepend.length >= dependencies.length) return resolve(true);
 			chrome.runtime.sendMessage(
-				this.env === envContext.inject ? window.joybook.id : chrome.runtime.id,
+				this.env === envContext.inject ? EXTENSION_ID : chrome.runtime.id,
 				{ event: MessageEvent.GetLaunchedModule },
 				(response: string[]) => {
 					if (chrome.runtime.lastError) {

@@ -4,12 +4,15 @@ interface Window {
 	mid: number;
 	season_id: number;
 	joybook: {
-		id: string;
+		log: (...msg: string[]) => void;
+		warn: (...msg: string[]) => void;
+		error: (...msg: string[]) => void;
 	};
 	jQuery: any;
 	$: any;
 	player: bili.Player;
 	__INITIAL_STATE__: bili.__INITIAL_STATE__;
+	XMLHttpRequest: XMLHttpRequest;
 }
 
 // tslint:disable variable-name

@@ -32,7 +32,8 @@
 			"ban-keywords",
 			"check-format",
 			"allow-snake-case",
-			"allow-pascal-case"
+			"allow-pascal-case",
+			"allow-leading-underscore"
 		],
 		"curly": [true, "ignore-same-line"],
 		"no-namespace": false,
@@ -43,6 +44,7 @@
 		"no-shadowed-variable": false,
 		"no-console": false,
 		"no-empty-interface": false,
+		"no-string-literal": false,
 		"member-ordering": false
 	}
 }
