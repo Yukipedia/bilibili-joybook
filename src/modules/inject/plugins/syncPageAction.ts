@@ -1,11 +1,13 @@
+import { EXTENSION_ID } from '@/lib/extension';
 import InjectModule from '@/lib/InjectModule';
 import { Direct } from '@/modules/background/accountShare/config';
 import RegExpPattern from '@/utils/RegExpPattern';
 
 export default class SyncPageAction extends InjectModule {
 	public remotePort: chrome.runtime.Port;
+	public responseCollect: boolean = false;
 
-	constructor(remotePort: chrome.runtime.Port) {
+	constructor() {
 		super({
 			name: 'plugin:syncPageAction',
 			dependencies: [],
@@ -16,7 +18,11 @@ export default class SyncPageAction extends InjectModule {
 			},
 		});
 
-		this.remotePort = remotePort;
+		this.remotePort = chrome.runtime.connect(EXTENSION_ID, { name: 'sync:pluginAttach' });
+	}
+
+	public waitRemoteResponse() {
+
 	}
 
 	public sync({ requestURL, requestData, response }: joybook.InjectHost.XHREvent) {

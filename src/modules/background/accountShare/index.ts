@@ -6,6 +6,7 @@ import config, { Direct } from './config';
 export default class AccountShare extends BackgroundModule {
 	private syncPage: HTMLIFrameElement;
 	private syncPort: chrome.runtime.Port = null as any;
+	private remotePort: chrome.runtime.Port = null as any;
 	private syncResponseCollect: Record<string, string> = {};
 
 	constructor() {
@@ -22,20 +23,27 @@ export default class AccountShare extends BackgroundModule {
 		this.addEventListener('remoteMessage', this.syncOpenPage);
 		this.addEventListener('remoteConnect', ({ port }) => {
 			if (port.name === 'sync:connect') {
-				console.log(port);
 				this.syncPort = port;
 				this.syncPort.onMessage.addListener(message => {
 					this.syncResponseCollect[message.payload.url] = message.payload.responseText;
 				});
+			}
+			if (port.name === 'sync:pluginAttach') {
+				this.remotePort = port;
+				this.remotePort.onMessage.addListener(this.onRemoteMessage);
 			}
 		});
 		// this.main();
 		return Promise.resolve();
 	}
 
+	public onRemoteMessage = () => {
+
+	}
+
 	public syncOpenPage = ({ tabId, message }: joybook.BackgroundHost.RemoteMessage) => {
 		if (!/^sync:.+/i.test(message.postName)) return;
-		const action = message.postName.split(':')[1];
+		const action = message.postName.split(':')[1];.
 		switch (action) {
 			case 'playurl':
 				chrome.tabs.get(tabId, tab => {
