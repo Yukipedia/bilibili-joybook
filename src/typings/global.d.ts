@@ -12,6 +12,7 @@ interface Window {
 	$: any;
 	player: bili.Player;
 	__INITIAL_STATE__: bili.__INITIAL_STATE__;
+	__PGC_USERSTATE__: bili.__PGC_USERSTATE__;
 	XMLHttpRequest: XMLHttpRequest;
 }
 

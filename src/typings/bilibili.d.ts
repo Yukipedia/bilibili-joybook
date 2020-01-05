@@ -438,5 +438,11 @@ declare namespace bili {
 		epList: EpInfo[];
 		videoData: DynamicRegionArchive;
 	}
+
+	interface __PGC_USERSTATE__ {
+		 dialog: {
+			title: string;
+		 };
+	}
 	// tslint:enable class-name
 }

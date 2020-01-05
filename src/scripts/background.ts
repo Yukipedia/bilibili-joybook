@@ -3,8 +3,10 @@ import AccountShare from '@/modules/background/accountShare';
 import BlockConnection from '@/modules/background/blockConnection';
 // import Giovanni from '@/modules/background/giovanni';
 import '@/plugins/google-analytics';
+import VIP from '@/modules/background/vip';
 
 new BackgroundHost({
+	VIP,
 	// Giovanni,
 	BlockConnection,
 	AccountShare,
