@@ -99,6 +99,7 @@ class MicroHost {
 				let oriError = param.error;
 				let mySuccess;
 				let myError;
+				// tslint:disable-next-line
 				let oriResultTransformer;
 				// 投递结果的transformer, 结果通过oriSuccess/Error投递
 				const dispatchResultTransformer = (p: any) => p

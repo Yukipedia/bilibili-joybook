@@ -53,5 +53,5 @@
 		"default_popup": "popup.html",
 		"default_title": "bilibili_joybook"
 	},
-	"content_security_policy": "script-src 'self' https://www.google-analytics.com; object-src 'self'"
+	"content_security_policy": "script-src 'self' 'unsafe-eval' https://www.google-analytics.com; object-src 'self'"
 }

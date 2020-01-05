@@ -8,6 +8,7 @@ export default class Hotkey extends Module {
 			context: envContext.inject,
 			priority: 1,
 			storageOptions: {
+				area: 'local',
 				switch: 'switch.hotkey',
 				defaultSwitch: true,
 			},
