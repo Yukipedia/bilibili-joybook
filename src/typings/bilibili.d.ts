@@ -440,9 +440,10 @@ declare namespace bili {
 	}
 
 	interface __PGC_USERSTATE__ {
-		 dialog: {
+		dialog: {
 			title: string;
-		 };
+		};
+		login: number;
 	}
 	// tslint:enable class-name
 }

@@ -12,21 +12,19 @@ export default class DetectVIPBangumi extends InjectModule {
 			},
 		});
 
-
-		this.remotePort = chrome.runtime.connect(EXTENSION_ID, { name: 'sync:pluginAttach' });
+		this.remotePort = chrome.runtime.connect(EXTENSION_ID, {
+			name: 'sync:pluginAttach',
+		});
 	}
 
 	public main() {
-		console.log(window.__PGC_USERSTATE__);
+		const isLogin = window.__PGC_USERSTATE__.login === 1;
 
 		if (window.__PGC_USERSTATE__.dialog) {
 			this.remotePort.postMessage({
 				postName: 'isVIP',
-				payload: [
-
-				],
+				payload: [isLogin],
 			});
 		}
-
 	}
 }
