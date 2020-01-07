@@ -14,7 +14,7 @@ export default class AccountShare extends BackgroundModule {
 
 		const page = document.createElement('iframe');
 		// page.sandbox.add('allow-scripts', 'allow-same-origin', 'allow-forms');
-		page.referrerPolicy = 'no-referrer';
+		// page.referrerPolicy = 'no-referrer';
 		document.body.appendChild(page);
 		this.syncPage = page;
 	}
@@ -43,7 +43,7 @@ export default class AccountShare extends BackgroundModule {
 
 	public syncOpenPage = ({ tabId, message }: joybook.BackgroundHost.RemoteMessage) => {
 		if (!/^sync:.+/i.test(message.postName)) return;
-		const action = message.postName.split(':')[1];.
+		const action = message.postName.split(':')[1];
 		switch (action) {
 			case 'playurl':
 				chrome.tabs.get(tabId, tab => {

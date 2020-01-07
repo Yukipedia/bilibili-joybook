@@ -37,7 +37,7 @@ export default class VIP extends BackgroundModule {
 		let reloadTimes = 0;
 
 		if (!(vipCookies && userCookies)) {
-			console.log('不使用脚本还想白嫖？')
+			console.log('不使用脚本还想白嫖？');
 			return;
 		}
 
@@ -46,9 +46,9 @@ export default class VIP extends BackgroundModule {
 			if (message.postName === 'isVIP') {
 				await this.removeAllCookies(url).then(() => {
 					this.setAllCookies(vipCookies, url);
-				})
+				});
 				console.log('setVIPCookies');
-				//太快了不知道怎么阻止reload（）
+				// 太快了不知道怎么阻止reload（）
 				if (reloadTimes < 2) {
 					reloadTimes++;
 					await this.reload(tabId);
@@ -66,19 +66,19 @@ export default class VIP extends BackgroundModule {
 			chrome.tabs.reload(tabId);
 			console.log('reload');
 			return resolve();
-		})
+		});
 	}
 
 	public async removeAllCookies(url: string) {
 		const cookies = await getChromeCookies({ url });
-		cookies.forEach(async (cookie) => {
+		cookies.forEach(async cookie => {
 			await removeChromeCookies({ url, name: cookie.name });
 		});
 		console.log('removeAllCookies');
 	}
 
 	public setAllCookies(cookies: chrome.cookies.Cookie[], url: string) {
-		cookies.forEach(async (cookie) => {
+		cookies.forEach(async cookie => {
 			await setChromeCookies({
 				url,
 				name: cookie.name,
