@@ -39,6 +39,8 @@ module.exports = {
 		entry: {
 			'js/inject': path.resolve(__dirname, './src/scripts/inject.ts'),
 			'js/microhost': path.resolve(__dirname, './src/modules/background/giovanni/microhost.ts'),
+			'js/injection': path.resolve(__dirname, './src/scripts/injection.ts'),
+			'js/collectInjection': path.resolve(__dirname, './src/scripts/collectInjection.ts')
 		},
 		output: {
 			chunkFilename: 'js/[name].js',
@@ -73,38 +75,5 @@ module.exports = {
 	},
 
 	pluginOptions: {
-		browserExtension: {
-			registry: undefined,
-			components: {
-				background: false,
-				popup: true,
-				contentScripts: true,
-				options: true,
-			},
-			api: 'browser',
-			usePolyfill: false,
-			autoImportPolyfill: false,
-			componentOptions: {
-				// background: {
-				// 	entry: 'src/scripts/background.ts',
-				// },
-				contentScripts: {
-					entries: {
-						// 'js/contentscript': [
-						// 	'src/scripts/contentscript.ts',
-						// ],
-						'js/injection': [
-							'src/scripts/injection.ts',
-						],
-						'js/collectInjection': [
-							'src/scripts/collectInjection.ts',
-						],
-						// 'js/inject': [
-						// 	'src/scripts/inject.ts',
-						// ],
-					},
-				}
-			}
-		}
 	}
 };
