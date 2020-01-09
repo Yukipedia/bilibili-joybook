@@ -1,4 +1,3 @@
-import { Direct } from '@/modules/background/accountShare/config';
 import { getURLParameters } from '@/utils/helper';
 import { EXTENSION_ID } from './extension';
 import InjectModule from './InjectModule';
@@ -167,13 +166,6 @@ export default class InjectHost {
 									container.requestData = getURLParameters(arguments[1]);
 									container.requestMethod = arguments[0];
 									container.requestURL = arguments[1];
-									if (
-										new RegExp(Direct.heartbeat, 'ig').test(arguments[1]) ||
-										new RegExp(Direct.playerso, 'ig').test(arguments[1])
-									) {
-										arguments[0] = 'GET';
-										arguments[1] = 'https://moeocean.com';
-									}
 								} else if (prop === 'send') {
 									arguments[0] && (container.requestData = getURLParameters(arguments[0]));
 								}
