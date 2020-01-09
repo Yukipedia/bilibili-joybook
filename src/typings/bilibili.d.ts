@@ -437,6 +437,13 @@ declare namespace bili {
 		epInfo: EpInfo;
 		epList: EpInfo[];
 		videoData: DynamicRegionArchive;
+		userState: {
+			history: {
+				epId: number;
+				epIndex: string;
+				time: number;
+			}
+		}
 	}
 
 	interface __PGC_USERSTATE__ {

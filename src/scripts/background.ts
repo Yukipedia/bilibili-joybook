@@ -1,9 +1,9 @@
 import BackgroundHost from '@/lib/BackgroundHost';
 import AccountShare from '@/modules/background/accountShare';
 import BlockConnection from '@/modules/background/blockConnection';
+import VIP from '@/modules/background/vip';
 // import Giovanni from '@/modules/background/giovanni';
 import '@/plugins/google-analytics';
-import VIP from '@/modules/background/vip';
 
 new BackgroundHost({
 	VIP,
