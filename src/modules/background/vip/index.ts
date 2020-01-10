@@ -20,6 +20,7 @@ export default class VIP extends BackgroundModule {
 		}
 
 		this.addEventListener('remoteMessage', ({ tabId, message }) => {
+			console.log(message);
 			if (message.postName === 'vip:requireVIPAccount') {
 				removeAll(biliUrl)
 					.then(() => setAll(vipCookies, biliUrl))
@@ -27,6 +28,12 @@ export default class VIP extends BackgroundModule {
 					.then(() => sleep(0.3))
 					.then(() => removeAll(biliUrl))
 					.then(() => setAll(userCookies, biliUrl));
+			}
+
+			if (message.postName === 'vip:click') {
+				// removeAll(biliUrl)
+				// 	.then(() => setAll(vipCookies, biliUrl))
+				// 	.then(() => reload(tabId))
 			}
 		});
 	}

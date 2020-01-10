@@ -8,9 +8,10 @@ export default class DetectVIPBangumi extends InjectModule {
 	constructor() {
 		super({
 			name: 'plugin:detectVIPBangumi',
-			run_at: RegExpPattern.bangumiUrlPattern,
+			run_at: RegExpPattern.videoUrlPattern,
 			listener: {
 				xhrrequest: 'detectVIPBangumi',
+				mutation: 'add',
 			},
 		});
 
@@ -19,24 +20,31 @@ export default class DetectVIPBangumi extends InjectModule {
 		});
 	}
 
-	public detectVIPBangumi({ requestURL, requestData }: joybook.InjectHost.XHREvent) {
+	public detectVIPBangumi({ requestURL }: joybook.InjectHost.XHREvent) {
 		if (requestURL.includes('x/web-interface/nav')) {
-			console.log(requestURL);
-			console.log(window.__PGC_USERSTATE__.dialog);
-			if (window.__PGC_USERSTATE__.dialog) {
+			if (window.__PGC_USERSTATE__ && window.__PGC_USERSTATE__.dialog) {
 				this.remotePort.postMessage({
 					postName: 'vip:requireVIPAccount',
 					scope: 'VIP',
 				});
 			}
-			// 如果在连续播放的情况下 要获取播放数据然后手动跳转过去
-		} else if (requestURL.includes('/pgc/player/web/playurl')) {
-			console.log(requestData);
-			window.location.href = 'https://www.bilibili.com/video/av' + requestData.avid;
-			// this.remotePort.postMessage({
-			// 	postName: 'vip:requireVIPAccount',
-			// 	scope: 'VIP',
-			// });
+		}
+	}
+
+	public add(mutation: MutationRecord) {
+		if ((mutation.target as HTMLElement).classList.contains("bui-select-wrap")) {
+			const target = mutation.target as HTMLDivElement;
+			const value = ['74', '112', '116'];
+			const items = target.querySelectorAll(".bui-select-item");
+			items.forEach(item => {
+				if (value.includes(item.getAttribute('data-value') as string)) {
+					item.addEventListener('click', () => {
+						this.remotePort.postMessage({
+							postName: 'vip:click',
+						})
+					})
+				};
+			});
 		}
 	}
 }
