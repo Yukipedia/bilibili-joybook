@@ -1,3 +1,7 @@
+## Joybook tampermonkey[BETA] 脚本现已可用
+[Joybook Tampermonkey](https://github.com/PC6live/joybook-tampermonkey)
+目前只有大会员共享功能
+
 # Joybook Chrome Extension
 
 [Google 线上应用程序商店](https://chrome.google.com/webstore/detail/iecammnlpogmogajmpdljiijmokjbpam)
